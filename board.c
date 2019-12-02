@@ -24,7 +24,7 @@ void ResetBoard(S_BOARD, *pos) {
     pos->pceNum[index] = 0;
   }
   
-  pos->KingSq[0] = pos->KingSq[0] = NO_SQ;
+  pos->KingSq[WHITE] = pos->KingSq[BLACK] = NO_SQ;
   
   pos->side = BOTH;
   pos->enPas = NO_SQ;
