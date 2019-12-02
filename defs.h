@@ -114,4 +114,10 @@ extern void PrintBitBoard(U64 bb);
 extern int PopBit(U64 *bb);
 extern int CountBits(U64 b);
 
+// hashkeys.c
+extern U64 GeneratePosKey(const S_BOARD *pos);
+
+// board.c
+extern void ResetBoard(S_BOARD, *pos)
+
 #endif
