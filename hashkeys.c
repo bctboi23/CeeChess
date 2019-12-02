@@ -1,4 +1,5 @@
 #include "defs.h"
+#include "stdio.h"
 
 U64 GeneratePosKey(const S_BOARD, *pos {
   
