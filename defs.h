@@ -93,6 +93,8 @@ typedef struct {
 #define SQ64(sq120) Sq120ToSq64[sq120]
 #define POP(b) PopBit(b)
 #define CNT(b) CountBits(b)
+#define CLRBIT(bb,sq) ( (bb) &= ClearMask[ (sq) ])
+#define SETBIT(bb,sq) ( (bb) |= SetMask[ (sq) ])
 
 /* GLOBALS */
 
