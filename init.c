@@ -1,7 +1,10 @@
 #include "defs.h"
 
-  int Sq120ToSq64[BRD_SQ_NUM];
-  int Sq64ToSq120[64];
+int Sq120ToSq64[BRD_SQ_NUM];
+int Sq64ToSq120[64];
+
+U64 SetMask[64];
+U64 ClearMask[64];
 
 void InitSq120To64() {
 
