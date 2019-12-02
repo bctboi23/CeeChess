@@ -56,17 +56,16 @@ int Parse_Fen(char *fen, S_BOARD *pos) {
 		return -1;
 	}		
 
-		for (i = 0; i < count; i++) {			
-	    sq64 = rank * 8 + file;
-			sq120 = SQ120(sq64);
-	    if (piece != EMPTY) {
-		pos->pieces[sq120] = piece;
-	    }
-			file++;
+	for (i = 0; i < count; i++) {			
+	    	sq64 = rank * 8 + file;
+		sq120 = SQ120(sq64);
+		if (piece != EMPTY) {
+			pos->pieces[sq120] = piece;
+		}
+		file++;
 	}
-		fen++;
-	}
-	
+	fen++;
+    }
 }
 
 void ResetBoard(S_BOARD *pos) {
