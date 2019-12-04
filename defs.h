@@ -49,7 +49,7 @@ enum { FALSE, TRUE };
 enum { WKCA = 1, WQCA = 2, BKCA = 4, BQCA = 8 };
 
 typedef struct {
-	
+
 	int move;
 	int castlePerm;
 	int enPas;
@@ -62,35 +62,35 @@ typedef struct {
 
 	int pieces[BRD_SQ_NUM];
 	U64 pawns[3];
-		
+
 	int KingSq[2];
-	
+
 	int side;
 	int enPas;
 	int fiftyMove;
-	
+
 	int ply;
 	int hisPly;
-	
+
 	int castlePerm;
-	
+
 	U64 posKey;
-	
+
 	int pceNum[13];
 	int bigPce[3];
 	int majPce[3];
 	int minPce[3];
-	
+
 	S_UNDO history[MAXGAMEMOVES];
-	
+
 	// piece list
-	int pList[13][10];	
-	
+	int pList[13][10];
+
 } S_BOARD;
 
 /* MACROS */
 
-#define FR2SQ(f,r) ( (21 + (f) ) + ( (r) * 10 ) ) 
+#define FR2SQ(f,r) ( (21 + (f) ) + ( (r) * 10 ) )
 #define SQ64(sq120) (Sq120ToSq64[(sq120)])
 #define SQ120(sq64) (Sq64ToSq120[(sq64)])
 #define POP(b) PopBit(b)
@@ -107,6 +107,10 @@ extern U64 ClearMask[64];
 extern U64 PieceKeys[13][120];
 extern U64 SideKey;
 extern U64 CastleKeys[16];
+extern char PceChar[];
+extern char SideChar[];
+extern char RankChar[];
+extern char FileChar[];
 
 /* FUNCTIONS */
 
@@ -123,22 +127,8 @@ extern U64 GeneratePosKey(const S_BOARD *pos);
 
 // board.c
 extern void ResetBoard(S_BOARD *pos);
-
+extern int ParseFen(char *fen, S_BOARD *pos);
+extern void PrintBoard(const S_BOARD *pos);
 
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
