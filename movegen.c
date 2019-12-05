@@ -237,6 +237,7 @@ void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list) {
           }
           continue;
         }
+	printf("\t\tNormal on %s\n", PrSq(t_sq));
       }
     }
     
