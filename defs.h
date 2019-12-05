@@ -20,10 +20,11 @@ exit(1);}
 
 typedef unsigned long long U64;
 
-#define NAME "seeChess 1.0"
+#define NAME "SeeChess 1.0"
 #define BRD_SQ_NUM 120
 
 #define MAXGAMEMOVES 2048
+#define MAXPOSITIONMOVES 256
 
 #define START_FEN  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -49,6 +50,16 @@ enum { FALSE, TRUE };
 enum { WKCA = 1, WQCA = 2, BKCA = 4, BQCA = 8 };
 
 typedef struct {
+	int move;
+	int score;
+} S_MOVE;
+
+typedef struct {
+	S_MOVE moves[MAXPOSITIONMOVES];
+	int count;
+} S_MOVELIST;
+
+typedef struct {
 
 	int move;
 	int castlePerm;
@@ -68,7 +79,7 @@ typedef struct {
 	int side;
 	int enPas;
 	int fiftyMove;
-	
+
 	int ply;
 	int hisPly;
 
@@ -77,9 +88,9 @@ typedef struct {
 	U64 posKey;
 
 	int pceNum[13];
-	int bigPce[3];
-	int majPce[3];
-	int minPce[3];
+	int bigPce[2];
+	int majPce[2];
+	int minPce[2];
 	int material[2];
 
 	S_UNDO history[MAXGAMEMOVES];
@@ -88,6 +99,31 @@ typedef struct {
 	int pList[13][10];
 
 } S_BOARD;
+
+/* GAME MOVE */
+
+/*
+0000 0000 0000 0000 0000 0111 1111 -> From 0x7F
+0000 0000 0000 0011 1111 1000 0000 -> To >> 7, 0x7F
+0000 0000 0011 1100 0000 0000 0000 -> Captured >> 14, 0xF
+0000 0000 0100 0000 0000 0000 0000 -> EP 0x40000
+0000 0000 1000 0000 0000 0000 0000 -> Pawn Start 0x80000
+0000 1111 0000 0000 0000 0000 0000 -> Promoted Piece >> 20, 0xF
+0001 0000 0000 0000 0000 0000 0000 -> Castle 0x1000000
+*/
+
+#define FROMSQ(m) ((m) & 0x7F)
+#define TOSQ(m) (((m)>>7) & 0x7F)
+#define CAPTURED(m) (((m)>>14) & 0xF)
+#define PROMOTED(m) (((m)>>20) & 0xF)
+
+#define MFLAGEP 0x40000
+#define MFLAGPS 0x80000
+#define MFLAGCA 0x1000000
+
+#define MFLAGCAP 0x7C000
+#define MFLAGPROM 0xF00000
+
 
 /* MACROS */
 
@@ -98,6 +134,11 @@ typedef struct {
 #define CNT(b) CountBits(b)
 #define CLRBIT(bb,sq) ((bb) &= ClearMask[(sq)])
 #define SETBIT(bb,sq) ((bb) |= SetMask[(sq)])
+
+#define IsBQ(p) (PieceBishopQueen[(p)])
+#define IsRQ(p) (PieceRookQueen[(p)])
+#define IsKn(p) (PieceKnight[(p)])
+#define IsKi(p) (PieceKing[(p)])
 
 /* GLOBALS */
 
@@ -122,6 +163,11 @@ extern int PieceCol[13];
 extern int FilesBrd[BRD_SQ_NUM];
 extern int RanksBrd[BRD_SQ_NUM];
 
+extern int PieceKnight[13];
+extern int PieceKing[13];
+extern int PieceRookQueen[13];
+extern int PieceBishopQueen[13];
+
 /* FUNCTIONS */
 
 // init.c
@@ -139,8 +185,26 @@ extern U64 GeneratePosKey(const S_BOARD *pos);
 extern void ResetBoard(S_BOARD *pos);
 extern int ParseFen(char *fen, S_BOARD *pos);
 extern void PrintBoard(const S_BOARD *pos);
-extern void UpdateListMaterial (S_BOARD *pos);
-extern int CheckBoard(const S_BOARD *pos)
+extern void UpdateListsMaterial(S_BOARD *pos);
+extern int CheckBoard(const S_BOARD *pos);
+
+// attack.c
+extern int SqAttacked(const int sq, const int side, const S_BOARD *pos);
+
+// io.c
+extern char *PrMove(const int move);
+extern char *PrSq(const int sq);
+extern void PrintMoveList(const S_MOVELIST *list);
+
+// validate.c
+extern int SqOnBoard(const int sq);
+extern int SideValid(const int side);
+extern int FileRankValid(const int fr);
+extern int PieceValidEmpty(const int pce);
+extern int PieceValid(const int pce);
+
+// movegen.c
+extern void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list);
 
 
 #endif

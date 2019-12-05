@@ -31,14 +31,14 @@ void InitFilesRanksBrd() {
 	int sq = A1;
 	int sq64 = 0;
 	
-	for (index = 0; index < BRD_SQ_NUM; ++index) {
+	for(index = 0; index < BRD_SQ_NUM; ++index) {
 		FilesBrd[index] = OFFBOARD;
 		RanksBrd[index] = OFFBOARD;
 	}
 	
-	for (rank = RANK_1; rank <= RANK_8; ++rank) {
-		for (file = FILE_A; file <= FILE_H; ++file) {
-			sq = FR2SQ(file, rank);
+	for(rank = RANK_1; rank <= RANK_8; ++rank) {
+		for(file = FILE_A; file <= FILE_H; ++file) {
+			sq = FR2SQ(file,rank);
 			FilesBrd[sq] = file;
 			RanksBrd[sq] = rank;
 		}
