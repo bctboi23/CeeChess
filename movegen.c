@@ -235,12 +235,10 @@ void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list) {
   pce = LoopSidePce[pceIndex++];
   while (pce != 0) {
       ASSERT(PieceValid(pce));
-      printf("sliders pceIndex:%d pce:%d\n", pceIndex, pce);
 
       for (pceNum = 0; pceNum < pos - > pceNum[pce]; ++pceNum) {
           sq = pos - > pList[pce][pceNum];
           ASSERT(SqOnBoard[sq]);
-          printf("Piece:%c on %s\n", PceChar[pce], PrSq(sq));
 
           for (index = 0; index < NumDir[pce]; ++index) {
               dir = PceDir[pce][index];
@@ -267,12 +265,10 @@ void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list) {
   pce = LoopNonSidePce[pceIndex++];
   while (pce != 0) {
       ASSERT(PieceValid(pce));
-      printf("non sliders pceIndex:%d pce:%d\n", pceIndex, pce);
 
       for (pceNum = 0; pceNum < pos - > pceNum[pce]; ++pceNum) {
           sq = pos - > pList[pce][pceNum];
           ASSERT(SqOnBoard[sq]);
-          printf("Piece:%c on %s\n", PceChar[pce], PrSq(sq));
 
           for (index = 0; index < NumDir[pce]; ++index) {
               dir = PceDir[pce][index];
