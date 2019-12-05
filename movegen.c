@@ -3,14 +3,6 @@
 #include "stdio.h"
 #include "defs.h"
 
-/*
-
-MoveGen(board, list)
-  loop all pieces
-   -> Slider loop each direction and add moves
-    -> AddMove list->moves[list->count] = move; list->count++;
-*/
-
 #define MOVE(f, t, ca, pro, fl) ( (f) | ( (t) << 7 ) | ( (ca) << 14 ) | ( (pro) << 20 ) | (fl) )
 #define SQOFFBOARD(sq) (FilesBrd[(sq)] == OFFBOARD)
 
@@ -142,8 +134,6 @@ void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list) {
   int dir = 0;
   int index = 0;
   int pceIndex = 0;
-  
-  printf("\n\nSide:%d\n", side);
 
   if (side == WHITE) {
       for (pceNum = 0; pceNum < pos - > pceNum[wP]; ++pceNum) {
