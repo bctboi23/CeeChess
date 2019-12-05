@@ -146,31 +146,59 @@ void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list) {
   printf("\n\nSide:%d\n", side);
 
   if (side == WHITE) {
-    for (pceNum = 0; pceNum < pos->pceNum[wP]; ++pceNum) {
-      sq = pos->pList[wP][pceNum];
-      ASSERT(SqOnBoard(sq));
+      for (pceNum = 0; pceNum < pos - > pceNum[wP]; ++pceNum) {
+          sq = pos - > pList[wP][pceNum];
+          ASSERT(SqOnBoard(sq));
 
-      if (pos->pieces[sq + 10] == EMPTY) {
-        AddWhitePawnMove(pos, sq, sq + 10, list);
-        if (RanksBrd[sq] == RANK_2 && pos->pieces[sq + 20] == EMPTY) {
-          AddQuietMove(pos, MOVE(sq, (sq + 20), EMPTY, EMPTY, MFLAGPS), list);
-        }
-      }
+          if (pos - > pieces[sq + 10] == EMPTY) {
+              AddWhitePawnMove(pos, sq, sq + 10, list);
+              if (RanksBrd[sq] == RANK_2 && pos - > pieces[sq + 20] == EMPTY) {
+                  AddQuietMove(pos, MOVE(sq, (sq + 20), EMPTY, EMPTY, MFLAGPS), list);
+              }
+          }
 
-      if (!SQOFFBOARD(sq + 9) && PieceCol[pos->pieces[sq + 9]] == BLACK) {
-        AddWhitePawnCapMove(pos, sq, sq + 9, pos->pieces[sq + 9], list);
-      }
-      if (!SQOFFBOARD(sq + 11) && PieceCol[pos->pieces[sq + 11]] == BLACK) {
-        AddWhitePawnCapMove(pos, sq, sq + 11, pos->pieces[sq + 11], list);
-      }
+          if (!SQOFFBOARD(sq + 9) && PieceCol[pos - > pieces[sq + 9]] == BLACK) {
+              AddWhitePawnCapMove(pos, sq, sq + 9, pos - > pieces[sq + 9], list);
+          }
+          if (!SQOFFBOARD(sq + 11) && PieceCol[pos - > pieces[sq + 11]] == BLACK) {
+              AddWhitePawnCapMove(pos, sq, sq + 11, pos - > pieces[sq + 11], list);
+          }
 
-      if (sq + 9 == pos->enPas) {
-        AddCaptureMove(pos, MOVE(sq, sq + 9, EMPTY, EMPTY, MFLAGEP), list);
+          if (sq + 9 == pos - > enPas) {
+              AddCaptureMove(pos, MOVE(sq, sq + 9, EMPTY, EMPTY, MFLAGEP), list);
+          }
+          if (sq + 11 == pos - > enPas) {
+              AddCaptureMove(pos, MOVE(sq, sq + 11, EMPTY, EMPTY, MFLAGEP), list);
+          }
       }
-      if (sq + 11 == pos->enPas) {
-        AddCaptureMove(pos, MOVE(sq, sq + 11, EMPTY, EMPTY, MFLAGEP), list);
+      if (pos - > castlePerm & WKCA) {
+          if (pos - > pieces[F1] == EMPTY && pos - > pieces[G1] == EMPTY) {
+              if (!SqAttacked(E1, BLACK, pos) && !SqAttacked(F1, BLACK, pos)) {
+                  printf("WKCA MoveGen\n");
+              }
+          }
       }
-    }
+      if (pos - > castlePerm & WKQA) {
+          if (pos - > pieces[D1] == EMPTY && pos - > pieces[C1] == EMPTY && pos - > pieces[B1] == EMPTY) {
+              if (!SqAttacked(E1, BLACK, pos) && !SqAttacked(D1, BLACK, pos)) {
+                  printf("WQCA MoveGen\n");
+              }
+          }
+      }
+      if (pos - > castlePerm & BKCA) {
+          if (pos - > pieces[F8] == EMPTY && pos - > pieces[G8] == EMPTY) {
+              if (!SqAttacked(E8, WHITE, pos) && !SqAttacked(F8, WHITE, pos)) {
+                  printf("BKCA MoveGen\n");
+              }
+          }
+      }
+      if (pos - > castlePerm & BKQA) {
+          if (pos - > pieces[D8] == EMPTY && pos - > pieces[C8] == EMPTY && pos - > pieces[B8] == EMPTY) {
+              if (!SqAttacked(E8, WHITE, pos) && !SqAttacked(D8, WHITE, pos)) {
+                  printf("BQCA MoveGen\n");
+              }
+          }
+      }
   }
   else {
     for (pceNum = 0; pceNum < pos->pceNum[bP]; ++pceNum) {
