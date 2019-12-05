@@ -20,7 +20,7 @@ int CheckBoard(const S_BOARD *pos) {
 	t_pawns[BOTH] = pos->pawns[BOTH];
 
 	// check piece lists
-	for(t_piece = wP; t_piece <= bK; ++t_piece) {
+	for (t_piece = wP; t_piece <= bK; ++t_piece) {
 		for(t_pce_num = 0; t_pce_num < pos->pceNum[t_piece]; ++t_pce_num) {
 			sq120 = pos->pList[t_piece][t_pce_num];
 			ASSERT(pos->pieces[sq120]==t_piece);
@@ -28,7 +28,7 @@ int CheckBoard(const S_BOARD *pos) {
 	}
 
 	// check piece count and other counters
-	for(sq64 = 0; sq64 < 64; ++sq64) {
+	for (sq64 = 0; sq64 < 64; ++sq64) {
 		sq120 = SQ120(sq64);
 		t_piece = pos->pieces[sq120];
 		t_pceNum[t_piece]++;
@@ -40,7 +40,7 @@ int CheckBoard(const S_BOARD *pos) {
 		t_material[color] += PieceVal[t_piece];
 	}
 
-	for(t_piece = wP; t_piece <= bK; ++t_piece) {
+	for (t_piece = wP; t_piece <= bK; ++t_piece) {
 		ASSERT(t_pceNum[t_piece]==pos->pceNum[t_piece]);
 	}
 
@@ -53,17 +53,17 @@ int CheckBoard(const S_BOARD *pos) {
 	ASSERT(pcount == (pos->pceNum[bP] + pos->pceNum[wP]));
 
 	// check bitboards squares
-	while(t_pawns[WHITE]) {
+	while (t_pawns[WHITE]) {
 		sq64 = POP(&t_pawns[WHITE]);
 		ASSERT(pos->pieces[SQ120(sq64)] == wP);
 	}
 
-	while(t_pawns[BLACK]) {
+	while (t_pawns[BLACK]) {
 		sq64 = POP(&t_pawns[BLACK]);
 		ASSERT(pos->pieces[SQ120(sq64)] == bP);
 	}
 
-	while(t_pawns[BOTH]) {
+	while (t_pawns[BOTH]) {
 		sq64 = POP(&t_pawns[BOTH]);
 		ASSERT( (pos->pieces[SQ120(sq64)] == bP) || (pos->pieces[SQ120(sq64)] == wP) );
 	}
@@ -89,7 +89,7 @@ void UpdateListsMaterial(S_BOARD *pos) {
 
 	int piece,sq,index,color;
 
-	for(index = 0; index < BRD_SQ_NUM; ++index) {
+	for (index = 0; index < BRD_SQ_NUM; ++index) {
 		sq = index;
 		piece = pos->pieces[index];
 		if(piece!=OFFBOARD && piece!= EMPTY) {
@@ -227,22 +227,26 @@ void ResetBoard(S_BOARD *pos) {
 
 	int index = 0;
 
-	for(index = 0; index < BRD_SQ_NUM; ++index) {
+	for (index = 0; index < BRD_SQ_NUM; ++index) {
 		pos->pieces[index] = OFFBOARD;
 	}
 
-	for(index = 0; index < 64; ++index) {
+	for (index = 0; index < 64; ++index) {
 		pos->pieces[SQ120(index)] = EMPTY;
 	}
 
-	for(index = 0; index < 3; ++index) {
+	for (index = 0; index < 2; ++index) {
 		pos->bigPce[index] = 0;
 		pos->majPce[index] = 0;
 		pos->minPce[index] = 0;
+		pos->material[index] = 0;
+	}
+	
+	for (index = 0; index < 3; ++index) {
 		pos->pawns[index] = 0ULL;
 	}
 
-	for(index = 0; index < 13; ++index) {
+	for (index = 0; index < 13; ++index) {
 		pos->pceNum[index] = 0;
 	}
 
@@ -266,7 +270,7 @@ void PrintBoard(const S_BOARD *pos) {
 
 	printf("\nGame Board:\n\n");
 
-	for(rank = RANK_8; rank >= RANK_1; rank--) {
+	for (rank = RANK_8; rank >= RANK_1; rank--) {
 		printf("%d  ",rank+1);
 		for(file = FILE_A; file <= FILE_H; file++) {
 			sq = FR2SQ(file,rank);
@@ -277,7 +281,7 @@ void PrintBoard(const S_BOARD *pos) {
 	}
 
 	printf("\n   ");
-	for(file = FILE_A; file <= FILE_H; file++) {
+	for (file = FILE_A; file <= FILE_H; file++) {
 		printf("%3c",'a'+file);
 	}
 	printf("\n");
