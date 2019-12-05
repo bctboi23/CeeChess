@@ -20,6 +20,26 @@ int LoopSlideIndex[2] = { 0, 4 };
 int LoopNonSlidePce[6] = { wN, wK, 0, bN, bK };
 int LoopNonSlideIndex[2] = { 0, 3 };
 
+int PceDir[13][8] = {
+	{ 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0 },
+	{ -8, -19,	-21, -12, 8, 19, 21, 12 },
+	{ -9, -11, 11, 9, 0, 0, 0, 0 },
+	{ -1, -10,	1, 10, 0, 0, 0, 0 },
+	{ -1, -10,	1, 10, -9, -11, 11, 9 },
+	{ -1, -10,	1, 10, -9, -11, 11, 9 },
+	{ 0, 0, 0, 0, 0, 0, 0 },
+	{ -8, -19,	-21, -12, 8, 19, 21, 12 },
+	{ -9, -11, 11, 9, 0, 0, 0, 0 },
+	{ -1, -10,	1, 10, 0, 0, 0, 0 },
+	{ -1, -10,	1, 10, -9, -11, 11, 9 },
+	{ -1, -10,	1, 10, -9, -11, 11, 9 }
+};
+
+int NumDir[13] = {
+ 0, 0, 8, 4, 4, 8, 8, 0, 8, 4, 4, 8, 8
+};
+
 void AddQuietMove(const S_BOARD *pos, int move, S_MOVELIST *list) {
 
   list->moves[list->count].move = move;
@@ -196,6 +216,29 @@ void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list) {
   while ( pce != 0 ) {
     ASSERT(PieceValid(pce));
     printf("non sliders pceIndex:%d pce:%d\n", pceIndex, pce);
+    
+    for (pceNum = 0; pceNum < pos->pceNUm[pce]; ++pceNum) {
+      sq = pos->pList[pce][pceNum];
+      ASSERT(SqOnBoard[sq]);
+      printf("Piece:%c on %s\n", PceChar[pce], PrSq(sq));
+      
+      for (index = 0; index < NumDir[pce]; ++index) {
+        dir = PceDir[pce][index];
+        t_sq = sq + dir;
+        
+        if (SQOFFBOARD(t_sq)) {
+          continue;
+        }
+        
+        // BLACK ^ 1 == WHITE, WHITE ^ 1 == BLACK
+        if (pos->pieces[t_sq] != EMPTY) {
+          if (PieceCol[pos->pieces[t_sq]] == side ^ 1) {
+            printf("\t\tCapture on %s\n", PrSq(t_sq));
+          }
+          continue;
+        }
+      }
+    }
     
     pce = LoopNonSlidePce[pceIndex++;]
   }
