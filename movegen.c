@@ -203,44 +203,66 @@ void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list) {
   /* Loop for slide pieces */
   pceIndex = LoopSlideIndex[side];
   pce = LoopSidePce[pceIndex++];
-  while ( pce != 0 ) {
-    ASSERT(PieceValid(pce));
-    printf("sliders pceIndex:%d pce:%d\n", pceIndex, pce);
-    
-    pce = LoopSlidePce[pceIndex++;]
+  while (pce != 0) {
+      ASSERT(PieceValid(pce));
+      printf("sliders pceIndex:%d pce:%d\n", pceIndex, pce);
+
+      for (pceNum = 0; pceNum < pos - > pceNum[pce]; ++pceNum) {
+          sq = pos - > pList[pce][pceNum];
+          ASSERT(SqOnBoard[sq]);
+          printf("Piece:%c on %s\n", PceChar[pce], PrSq(sq));
+
+          for (index = 0; index < NumDir[pce]; ++index) {
+              dir = PceDir[pce][index];
+              t_sq = sq + dir;
+
+              while (!SQOFFBOARD(t_sq)) {
+                  // BLACK ^ 1 == WHITE, WHITE ^ 1 == BLACK
+                  if (pos - > pieces[t_sq] != EMPTY) {
+                      if (PieceCol[pos - > pieces[t_sq]] == side ^ 1) {
+                          printf("\t\tCapture on %s\n", PrSq(t_sq));
+                      }
+                      break;
+                  }
+                  printf("\t\tNormal on %s\n", PrSq(t_sq));
+                  t_sq += dir;
+              }
+          }
+      }
+      pce = LoopSlidePce[pceIndex++;]
   }
-  
+
   /* Loop for non slide */
   pceIndex = LoopNonSlideIndex[side];
   pce = LoopNonSidePce[pceIndex++];
-  while ( pce != 0 ) {
-    ASSERT(PieceValid(pce));
-    printf("non sliders pceIndex:%d pce:%d\n", pceIndex, pce);
-    
-    for (pceNum = 0; pceNum < pos->pceNUm[pce]; ++pceNum) {
-      sq = pos->pList[pce][pceNum];
-      ASSERT(SqOnBoard[sq]);
-      printf("Piece:%c on %s\n", PceChar[pce], PrSq(sq));
-      
-      for (index = 0; index < NumDir[pce]; ++index) {
-        dir = PceDir[pce][index];
-        t_sq = sq + dir;
-        
-        if (SQOFFBOARD(t_sq)) {
-          continue;
-        }
-        
-        // BLACK ^ 1 == WHITE, WHITE ^ 1 == BLACK
-        if (pos->pieces[t_sq] != EMPTY) {
-          if (PieceCol[pos->pieces[t_sq]] == side ^ 1) {
-            printf("\t\tCapture on %s\n", PrSq(t_sq));
+  while (pce != 0) {
+      ASSERT(PieceValid(pce));
+      printf("non sliders pceIndex:%d pce:%d\n", pceIndex, pce);
+
+      for (pceNum = 0; pceNum < pos - > pceNum[pce]; ++pceNum) {
+          sq = pos - > pList[pce][pceNum];
+          ASSERT(SqOnBoard[sq]);
+          printf("Piece:%c on %s\n", PceChar[pce], PrSq(sq));
+
+          for (index = 0; index < NumDir[pce]; ++index) {
+              dir = PceDir[pce][index];
+              t_sq = sq + dir;
+
+              if (SQOFFBOARD(t_sq)) {
+                  continue;
+              }
+
+              // BLACK ^ 1 == WHITE, WHITE ^ 1 == BLACK
+              if (pos - > pieces[t_sq] != EMPTY) {
+                  if (PieceCol[pos - > pieces[t_sq]] == side ^ 1) {
+                      printf("\t\tCapture on %s\n", PrSq(t_sq));
+                  }
+                  continue;
+              }
+              printf("\t\tNormal on %s\n", PrSq(t_sq));
           }
-          continue;
-        }
-	printf("\t\tNormal on %s\n", PrSq(t_sq));
       }
-    }
-    
-    pce = LoopNonSlidePce[pceIndex++;]
+
+      pce = LoopNonSlidePce[pceIndex++;]
   }
 }
