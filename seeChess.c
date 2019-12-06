@@ -35,6 +35,9 @@ int main() {
 			if (Move != NOMOVE) {
 				MakeMove(board, Move);
 			}
+			else {
+				printf("Move not parsed: %s\n", input);
+			}
 		}
 
 		fflush(stdin);
