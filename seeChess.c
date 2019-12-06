@@ -14,32 +14,31 @@ int main() {
 	S_MOVELIST list[1];
 
 	ParseFen(START_FEN, board);
+	// PerftTest(5, board);
 
-	GenerateAllMoves(board, list);
+	char input[6];
+	int Move = NOMOVE;
+	while (TRUE) {
+		PrintBoard(board);
+		printf("Please enter a move > ");
+		fgets(input, 6, stdin);
 
-	int MoveNum = 0;
-	int move = 0;
-
-	PrintBoard(board);
-	getchar();
-
-	for (MoveNum = 0; MoveNum < list->count; ++MoveNum) {
-		move = list->moves[MoveNum].move;
-
-		if (!MakeMove(board, move)) {
+		if (input[0] == 'q') {
+			break;
+		}
+		else if (input[0] == 't') {
+			TakeMove(board);
 			continue;
 		}
+		else {
+			Move = ParseMove(input, board);
+			if (Move != NOMOVE) {
+				MakeMove(board, Move);
+			}
+		}
 
-		printf("\nMADE:%s", PrMove(move));
-		PrintBoard(board);
-
-		TakeMove(board);
-		printf("\nTAKEN:%s", PrMove(move));
-		PrintBoard(board);
-
-		getchar();
+		fflush(stdin);
 	}
-	// PrintMoveList(list);
 
 	return 0;
 }

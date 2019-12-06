@@ -209,7 +209,7 @@ int MakeMove(S_BOARD *pos, int move) {
       }
       else {
         pos->enPas = from - 10;
-        ASSERT(RanksBrd[pos->enPas] == RANK_7);
+        ASSERT(RanksBrd[pos->enPas] == RANK_6);
       }
       HASH_EP;
     }
