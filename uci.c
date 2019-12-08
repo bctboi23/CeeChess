@@ -70,40 +70,41 @@ void ParseGo(char* line, S_SEARCHINFO *info, S_BOARD *pos) {
 	SearchPosition(pos, info);
 }
 
+// position fen fenstr
+// position startpos
+// ... moves e2e4 e7e5 b7b8q
 void ParsePosition(char* lineIn, S_BOARD *pos) {
 
-  lineIn += 9;
-  char *ptrChar = lineIn;
+	lineIn += 9;
+    char *ptrChar = lineIn;
 
-  if (strncmp(lineIn, "startpos", 8) == 0) {
-    ParseFen(START_FEN, pos);
-  }
-  else {
-    ptrChar = strstr(lineIn, "fen");
-    if (ptrChar == NULL) {
+    if(strncmp(lineIn, "startpos", 8) == 0){
         ParseFen(START_FEN, pos);
+    } else {
+        ptrChar = strstr(lineIn, "fen");
+        if(ptrChar == NULL) {
+            ParseFen(START_FEN, pos);
+        } else {
+            ptrChar+=4;
+            ParseFen(ptrChar, pos);
+        }
     }
-    else {
-      ptrChar+=4;
-      ParseFen(ptrChar, pos);
+
+	ptrChar = strstr(lineIn, "moves");
+	int move;
+
+	if(ptrChar != NULL) {
+        ptrChar += 6;
+        while(*ptrChar) {
+              move = ParseMove(ptrChar,pos);
+			  if(move == NOMOVE) break;
+			  MakeMove(pos, move);
+              pos->ply=0;
+              while(*ptrChar && *ptrChar!= ' ') ptrChar++;
+              ptrChar++;
+        }
     }
-  }
-
-  ptrChar = strstr(lineIn, "moves");
-  int move;
-
-  if(ptrChar != NULL) {
-    ptrChar += 6;
-    while(*ptrChar) {
-      move = ParseMove(ptrChar,pos);
-      if(move == NOMOVE) break;
-      MakeMove(pos, move);
-      pos->ply=0;
-      while(*ptrChar && *ptrChar!= ' ') ptrChar++;
-      ptrChar++;
-      }
-  }
-  PrintBoard(pos);
+	PrintBoard(pos);
 }
 
 void Uci_Loop() {
@@ -133,24 +134,19 @@ void Uci_Loop() {
         if (!strncmp(line, "isready", 7)) {
             printf("readyok\n");
             continue;
-        }
-        else if (!strncmp(line, "position", 8)) {
+        } else if (!strncmp(line, "position", 8)) {
             ParsePosition(line, pos);
-        }
-        else if (!strncmp(line, "ucinewgame", 10)) {
+        } else if (!strncmp(line, "ucinewgame", 10)) {
             ParsePosition("position startpos\n", pos);
-        }
-        else if (!strncmp(line, "go", 2)) {
+        } else if (!strncmp(line, "go", 2)) {
             ParseGo(line, info, pos);
-        }
-        else if (!strncmp(line, "quit", 4)) {
+        } else if (!strncmp(line, "quit", 4)) {
             info->quit = TRUE;
             break;
-        }
-        else if (!strncmp(line, "uci", 3)) {
-            printf("id name %s\n",NAME);
-            printf("id author bctboi23\n");
-            printf("uciok\n");
+        } else if (!strncmp(line, "uci", 3)) {
+          printf("id name %s\n",NAME);
+          printf("id author bctboi23\n");
+          printf("uciok\n");
         }
 		if(info->quit) break;
     }

@@ -3,7 +3,7 @@
 
 #include "stdlib.h"
 
-// #define DEBUG
+//#define DEBUG
 
 #ifndef DEBUG
 #define ASSERT(n)
@@ -20,7 +20,7 @@ exit(1);}
 
 typedef unsigned long long U64;
 
-#define NAME "seeChess 1.0"
+#define NAME "SeeChess 0.1"
 #define BRD_SQ_NUM 120
 
 #define MAXGAMEMOVES 2048
@@ -122,18 +122,16 @@ typedef struct {
 	int starttime;
 	int stoptime;
 	int depth;
-	int depthset;
 	int timeset;
 	int movestogo;
-	int infinite;
 
 	long nodes;
 
 	int quit;
 	int stopped;
 
-  float fh;
-  float fhf;
+	float fh;
+	float fhf;
 
 } S_SEARCHINFO;
 
@@ -267,17 +265,15 @@ extern void ReadInput(S_SEARCHINFO *info);
 
 // pvtable.c
 extern void InitPvTable(S_PVTABLE *table);
-extern void ClearPvTable(S_PVTABLE *table);
 extern void StorePvMove(const S_BOARD *pos, const int move);
 extern int ProbePvTable(const S_BOARD *pos);
 extern int GetPvLine(const int depth, S_BOARD *pos);
+extern void ClearPvTable(S_PVTABLE *table);
 
 // evaluate.c
 extern int EvalPosition(const S_BOARD *pos);
 
 // uci.c
-extern void ParseGo(char* line, S_SEARCHINFO *info, S_BOARD *pos);
-extern void ParsePosition(char* lineIn, S_BOARD *pos);
 extern void Uci_Loop();
 
 #endif
