@@ -116,10 +116,10 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 
 	char line[INPUTBUFFER];
     printf("id name %s\n",NAME);
-    printf("id author Bluefever\n");
+    printf("id author Bctboi23\n");
 	printf("option name Hash type spin default 64 min 4 max %d\n",MAX_HASH);
     printf("uciok\n");
-	
+
 	int MB = 64;
 
 	while (TRUE) {
@@ -146,12 +146,12 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
             break;
         } else if (!strncmp(line, "uci", 3)) {
             printf("id name %s\n",NAME);
-            printf("id author Bluefever\n");
+            printf("id author Bctboi23\n");
             printf("uciok\n");
         } else if (!strncmp(line, "debug", 4)) {
             DebugAnalysisTest(pos,info);
             break;
-        } else if (!strncmp(line, "setoption name Hash value ", 26)) {			
+        } else if (!strncmp(line, "setoption name Hash value ", 26)) {
 			sscanf(line,"%*s %*s %*s %*s %d",&MB);
 			if(MB < 4) MB = 4;
 			if(MB > MAX_HASH) MB = MAX_HASH;
@@ -161,16 +161,3 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 		if(info->quit) break;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
