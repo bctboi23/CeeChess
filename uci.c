@@ -107,20 +107,20 @@ void ParsePosition(char* lineIn, S_BOARD *pos) {
 	PrintBoard(pos);
 }
 
-void Uci_Loop() {
+void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
+
+	info->GAME_MODE = UCIMODE;
 
 	setbuf(stdin, NULL);
     setbuf(stdout, NULL);
 
 	char line[INPUTBUFFER];
     printf("id name %s\n",NAME);
-    printf("id author bctboi23\n");
+    printf("id author Bluefever\n");
+	printf("option name Hash type spin default 64 min 4 max 2048\n");
     printf("uciok\n");
-
-
-    S_BOARD pos[1];
-    S_SEARCHINFO info[1];
-    InitPvTable(pos->PvTable);
+	
+	int MB = 64;
 
 	while (TRUE) {
 		memset(&line[0], 0, sizeof(line));
@@ -139,16 +139,38 @@ void Uci_Loop() {
         } else if (!strncmp(line, "ucinewgame", 10)) {
             ParsePosition("position startpos\n", pos);
         } else if (!strncmp(line, "go", 2)) {
+            printf("Seen Go..\n");
             ParseGo(line, info, pos);
         } else if (!strncmp(line, "quit", 4)) {
             info->quit = TRUE;
             break;
         } else if (!strncmp(line, "uci", 3)) {
-          printf("id name %s\n",NAME);
-          printf("id author bctboi23\n");
-          printf("uciok\n");
-        }
+            printf("id name %s\n",NAME);
+            printf("id author Bluefever\n");
+            printf("uciok\n");
+        } else if (!strncmp(line, "debug", 4)) {
+            DebugAnalysisTest(pos,info);
+            break;
+        } else if (!strncmp(line, "setoption name Hash value ", 26)) {			
+			sscanf(line,"%*s %*s %*s %*s %d",&MB);
+			if(MB < 4) MB = 4;
+			if(MB > 2048) MB = 2048;
+			printf("Set Hash to %d MB\n",MB);
+			InitHashTable(pos->HashTable, MB);
+		}
 		if(info->quit) break;
     }
-	free(pos->PvTable->pTable);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

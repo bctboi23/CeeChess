@@ -26,6 +26,7 @@ const int CastlePerm[120] = {
 static void ClearPiece(const int sq, S_BOARD *pos) {
 
 	ASSERT(SqOnBoard(sq));
+	ASSERT(CheckBoard(pos));
 	
     int pce = pos->pieces[sq];
 	
@@ -34,6 +35,8 @@ static void ClearPiece(const int sq, S_BOARD *pos) {
 	int col = PieceCol[pce];
 	int index = 0;
 	int t_pceNum = -1;
+	
+	ASSERT(SideValid(col));
 	
     HASH_PCE(pce,sq);
 	
@@ -60,6 +63,7 @@ static void ClearPiece(const int sq, S_BOARD *pos) {
 	}
 	
 	ASSERT(t_pceNum != -1);
+	ASSERT(t_pceNum>=0&&t_pceNum<10);
 	
 	pos->pceNum[pce]--;		
 	
@@ -74,6 +78,7 @@ static void AddPiece(const int sq, S_BOARD *pos, const int pce) {
     ASSERT(SqOnBoard(sq));
 	
 	int col = PieceCol[pce];
+	ASSERT(SideValid(col));
 
     HASH_PCE(pce,sq);
 	
@@ -104,6 +109,8 @@ static void MovePiece(const int from, const int to, S_BOARD *pos) {
 	int index = 0;
 	int pce = pos->pieces[from];	
 	int col = PieceCol[pce];
+	ASSERT(SideValid(col));
+    ASSERT(PieceValid(pce));
 	
 #ifdef DEBUG
 	int t_PieceNum = FALSE;
@@ -146,6 +153,8 @@ int MakeMove(S_BOARD *pos, int move) {
     ASSERT(SqOnBoard(to));
     ASSERT(SideValid(side));
     ASSERT(PieceValid(pos->pieces[from]));
+	ASSERT(pos->hisPly >= 0 && pos->hisPly < MAXGAMEMOVES);
+	ASSERT(pos->ply >= 0 && pos->ply < MAXDEPTH);
 	
 	pos->history[pos->hisPly].posKey = pos->posKey;
 	
@@ -199,6 +208,9 @@ int MakeMove(S_BOARD *pos, int move) {
 	pos->hisPly++;
 	pos->ply++;
 	
+	ASSERT(pos->hisPly >= 0 && pos->hisPly < MAXGAMEMOVES);
+	ASSERT(pos->ply >= 0 && pos->ply < MAXDEPTH);
+	
 	if(PiecePawn[pos->pieces[from]]) {
         pos->fiftyMove = 0;
         if(move & MFLAGPS) {
@@ -247,6 +259,9 @@ void TakeMove(S_BOARD *pos) {
 	
 	pos->hisPly--;
     pos->ply--;
+	
+	ASSERT(pos->hisPly >= 0 && pos->hisPly < MAXGAMEMOVES);
+	ASSERT(pos->ply >= 0 && pos->ply < MAXDEPTH);
 	
     int move = pos->history[pos->hisPly].move;
     int from = FROMSQ(move);
@@ -307,8 +322,53 @@ void TakeMove(S_BOARD *pos) {
 }
 
 
+void MakeNullMove(S_BOARD *pos) {
 
+    ASSERT(CheckBoard(pos));
+    ASSERT(!SqAttacked(pos->KingSq[pos->side],pos->side^1,pos));
 
+    pos->ply++;
+    pos->history[pos->hisPly].posKey = pos->posKey;
+
+    if(pos->enPas != NO_SQ) HASH_EP;
+
+    pos->history[pos->hisPly].move = NOMOVE;
+    pos->history[pos->hisPly].fiftyMove = pos->fiftyMove;
+    pos->history[pos->hisPly].enPas = pos->enPas;
+    pos->history[pos->hisPly].castlePerm = pos->castlePerm;
+    pos->enPas = NO_SQ;
+
+    pos->side ^= 1;
+    pos->hisPly++;
+    HASH_SIDE;
+   
+    ASSERT(CheckBoard(pos));
+	ASSERT(pos->hisPly >= 0 && pos->hisPly < MAXGAMEMOVES);
+	ASSERT(pos->ply >= 0 && pos->ply < MAXDEPTH);
+
+    return;
+} // MakeNullMove
+
+void TakeNullMove(S_BOARD *pos) {
+    ASSERT(CheckBoard(pos));
+
+    pos->hisPly--;
+    pos->ply--;
+
+    if(pos->enPas != NO_SQ) HASH_EP;
+
+    pos->castlePerm = pos->history[pos->hisPly].castlePerm;
+    pos->fiftyMove = pos->history[pos->hisPly].fiftyMove;
+    pos->enPas = pos->history[pos->hisPly].enPas;
+
+    if(pos->enPas != NO_SQ) HASH_EP;
+    pos->side ^= 1;
+    HASH_SIDE;
+  
+    ASSERT(CheckBoard(pos));
+	ASSERT(pos->hisPly >= 0 && pos->hisPly < MAXGAMEMOVES);
+	ASSERT(pos->ply >= 0 && pos->ply < MAXDEPTH);
+}
 
 
 

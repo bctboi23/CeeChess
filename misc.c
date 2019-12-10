@@ -2,17 +2,17 @@
 
 #include "stdio.h"
 #include "defs.h"
-
+#include "string.h"
 #ifdef WIN32
 #include "windows.h"
-#else
+  #else
 #include "sys/time.h"
 #include "sys/select.h"
 #include "unistd.h"
 #include "string.h"
 #endif
 
-int GetTimeMs() { 
+int GetTimeMs() {
 #ifdef WIN32
   return GetTickCount();
 #else
@@ -63,7 +63,7 @@ void ReadInput(S_SEARCHINFO *info) {
   int             bytes;
   char            input[256] = "", *endc;
 
-    if (InputWaiting()) {    
+    if (InputWaiting()) {
 		info->stopped = TRUE;
 		do {
 		  bytes=read(fileno(stdin),input,256);
