@@ -6,6 +6,8 @@
 
 // #define DEBUG
 
+#define MAX_HASH 1024
+
 #ifndef DEBUG
 #define ASSERT(n)
 #else

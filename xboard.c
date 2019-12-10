@@ -98,6 +98,7 @@ void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 	int move = NOMOVE;
 	char inBuf[80], command[80];
 	int MB;
+
 	engineSide = BLACK;
 	ParseFen(START_FEN, pos);
 	depth = -1;
@@ -183,7 +184,7 @@ void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 		if(!strcmp(command, "memory")) {
 			sscanf(inBuf, "memory %d", &MB);
 		    if(MB < 4) MB = 4;
-			if(MB > 2048) MB = 2048;
+			if(MB > MAX_HASH) MB = MAX_HASH;
 			printf("Set Hash to %d MB\n",MB);
 			InitHashTable(pos->HashTable, MB);
 			continue;

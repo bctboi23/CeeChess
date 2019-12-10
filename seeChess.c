@@ -16,7 +16,7 @@ int main() {
 	S_BOARD pos[1];
     S_SEARCHINFO info[1];
     info->quit = FALSE;
-    pos->HashTable->pTable = NULL;
+	pos->HashTable->pTable = NULL;
     InitHashTable(pos->HashTable, 64);
 	setbuf(stdin, NULL);
     setbuf(stdout, NULL);

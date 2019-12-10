@@ -117,7 +117,7 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 	char line[INPUTBUFFER];
     printf("id name %s\n",NAME);
     printf("id author Bluefever\n");
-	printf("option name Hash type spin default 64 min 4 max 2048\n");
+	printf("option name Hash type spin default 64 min 4 max %d\n",MAX_HASH);
     printf("uciok\n");
 	
 	int MB = 64;
@@ -154,7 +154,7 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
         } else if (!strncmp(line, "setoption name Hash value ", 26)) {			
 			sscanf(line,"%*s %*s %*s %*s %d",&MB);
 			if(MB < 4) MB = 4;
-			if(MB > 2048) MB = 2048;
+			if(MB > MAX_HASH) MB = MAX_HASH;
 			printf("Set Hash to %d MB\n",MB);
 			InitHashTable(pos->HashTable, MB);
 		}
