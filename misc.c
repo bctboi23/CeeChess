@@ -2,6 +2,7 @@
 
 #include "stdio.h"
 #include "defs.h"
+#include "unistd.h"
 
 #ifdef WIN32
 #include "windows.h"

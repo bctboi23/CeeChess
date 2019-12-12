@@ -2,8 +2,9 @@
 
 #include "stdio.h"
 #include "defs.h"
-
-
+// Null Move Pruning Values
+const int R = 2;
+const int minDepth = 3;
 int rootDepth;
 
 static void CheckUp(S_SEARCHINFO *info) {
@@ -188,9 +189,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		return Score;
 	}
 
-	int R = 2;
-
-	if( DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0) && depth >= 4) {
+	if( DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0) && depth >= minDepth) {
 		MakeNullMove(pos);
 		Score = -AlphaBeta( -beta, -beta + 1, depth - 1 - R, pos, info, FALSE);
 		TakeNullMove(pos);
@@ -237,13 +236,13 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
         }
 
 		Legal++;
+		// PVS (speeds up search with good move ordering)
 		if (FoundPv == TRUE) {
 			Score = -AlphaBeta( -alpha - 1, -alpha, depth-1, pos, info, TRUE);
 			if (Score > alpha && Score < beta) {
 				Score = -AlphaBeta( -beta, -alpha, depth-1, pos, info, TRUE);
 			}
-		}
-		else {
+		} else {
 			Score = -AlphaBeta( -beta, -alpha, depth-1, pos, info, TRUE);
 		}
 
