@@ -104,7 +104,7 @@ static int MaterialDraw(const S_BOARD *pos) {
 
 #define ENDGAME_MAT (1 * PieceVal[wR] + 2 * PieceVal[wN] + 2 * PieceVal[wP] + PieceVal[wK])
 
-int EvalPosition(const S_BOARD *pos) {
+int EvalPosition(S_BOARD *pos) {
 
 	ASSERT(CheckBoard(pos));
 

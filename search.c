@@ -2,9 +2,20 @@
 
 #include "stdio.h"
 #include "defs.h"
+
 // Null Move Pruning Values
-const int R = 2;
-const int minDepth = 3;
+static const int R = 2;
+static const int minDepth = 3;
+
+// Razoring Values
+static const int RazorDepth = 2;
+static const int RazorMargin = 400;
+
+// LMR Values
+static const int LateMoveDepth = 3;
+static const int FullSearchMoves = 4;
+static const int ShallowReduceMoves = 6;
+
 int rootDepth;
 
 static void CheckUp(S_SEARCHINFO *info) {
@@ -78,6 +89,7 @@ static void ClearForSearch(S_BOARD *pos, S_SEARCHINFO *info) {
 	info->nodes = 0;
 	info->fh = 0;
 	info->fhf = 0;
+	info->nodesPruned = 0;
 }
 
 static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
@@ -150,7 +162,7 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 	return alpha;
 }
 
-static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO *info, int DoNull) {
+static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO *info, int DoNull, int DoLMR) {
 
 	ASSERT(CheckBoard(pos));
 	ASSERT(beta>alpha);
@@ -175,6 +187,13 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		return EvalPosition(pos);
 	}
 
+	// Mate Distance Pruning
+	alpha = MAX(alpha, -INFINITE + pos->ply);
+	beta = MIN(beta, INFINITE - pos->ply);
+	if (alpha >= beta) {
+		return alpha;
+	}
+
 	int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
 
 	if(InCheck == TRUE) {
@@ -189,9 +208,19 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		return Score;
 	}
 
+	// Razoring
+	if (!PvMove && !InCheck && depth <= RazorDepth) {
+		if (EvalPosition(pos) + RazorMargin < alpha) {
+			// drop into qSearch if move most likely won't beat alpha
+			info->nodesPruned++;
+			return Quiescence(alpha, beta, pos, info);
+		}
+	}
+
+	// Null Move Pruning
 	if( DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0) && depth >= minDepth) {
 		MakeNullMove(pos);
-		Score = -AlphaBeta( -beta, -beta + 1, depth - 1 - R, pos, info, FALSE);
+		Score = -AlphaBeta( -beta, -beta + 1, depth - 1 - R, pos, info, FALSE, FALSE);
 		TakeNullMove(pos);
 		if(info->stopped == TRUE) {
 			return 0;
@@ -238,12 +267,18 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		Legal++;
 		// PVS (speeds up search with good move ordering)
 		if (FoundPv == TRUE) {
-			Score = -AlphaBeta( -alpha - 1, -alpha, depth-1, pos, info, TRUE);
+			// Late Move Reductions
+			if (DoLMR && depth >= LateMoveDepth && Legal > FullSearchMoves && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !(list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) {
+				int reduce = Legal > (FullSearchMoves + ShallowReduceMoves) ? depth / 3 : depth / 4;
+				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1 - reduce, pos, info, TRUE, FALSE);
+			} else {
+				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, TRUE);
+			}
 			if (Score > alpha && Score < beta) {
-				Score = -AlphaBeta( -beta, -alpha, depth-1, pos, info, TRUE);
+				Score = -AlphaBeta( -beta, -alpha, depth-1, pos, info, TRUE, FALSE);
 			}
 		} else {
-			Score = -AlphaBeta( -beta, -alpha, depth-1, pos, info, TRUE);
+			Score = -AlphaBeta( -beta, -alpha, depth-1, pos, info, TRUE, FALSE);
 		}
 
 		TakeMove(pos);
@@ -315,7 +350,7 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 	for( currentDepth = 1; currentDepth <= info->depth; ++currentDepth ) {
 							// alpha	 beta
 		rootDepth = currentDepth;
-		bestScore = AlphaBeta(-INFINITE, INFINITE, currentDepth, pos, info, TRUE);
+		bestScore = AlphaBeta(-INFINITE, INFINITE, currentDepth, pos, info, TRUE, TRUE);
 
 		if(info->stopped == TRUE) {
 			break;
@@ -324,8 +359,14 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 		pvMoves = GetPvLine(currentDepth, pos);
 		bestMove = pos->PvArray[0];
 		if(info->GAME_MODE == UCIMODE) {
+			if (abs(bestScore) > ISMATE) {
+				bestScore = (bestScore > 0 ? 30000 - bestScore + 1 : -30000 - bestScore) / 2;
+				printf("info score mate %d depth %d nodes %ld time %d ",
+					bestScore,currentDepth,info->nodes,GetTimeMs()-info->starttime);
+				} else {
 			printf("info score cp %d depth %d nodes %ld time %d ",
 				bestScore,currentDepth,info->nodes,GetTimeMs()-info->starttime);
+			}
 		} else if(info->GAME_MODE == XBOARDMODE && info->POST_THINKING == TRUE) {
 			printf("%d %d %d %ld ",
 				currentDepth,bestScore,(GetTimeMs()-info->starttime)/10,info->nodes);
@@ -344,8 +385,8 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 			printf("\n");
 		}
 
-		//printf("Hits:%d Overwrite:%d NewWrite:%d Cut:%d\nOrdering %.2f NullCut:%d\n",pos->HashTable->hit,pos->HashTable->overWrite,pos->HashTable->newWrite,pos->HashTable->cut,
-		//(info->fhf/info->fh)*100,info->nullCut);
+		//printf("Hits:%d Overwrite:%d NewWrite:%d Cut:%d\nOrdering %.2f NullCut:%d, RazoringPruned:%d\n",pos->HashTable->hit,pos->HashTable->overWrite,pos->HashTable->newWrite,pos->HashTable->cut,
+		//(info->fhf/info->fh)*100,info->nullCut,info->nodesPruned);
 	}
 
 	if(info->GAME_MODE == UCIMODE) {

@@ -117,10 +117,10 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 	char line[INPUTBUFFER];
     printf("id name %s\n",NAME);
     printf("id author Bctboi23\n");
-	printf("option name Hash type spin default 64 min 4 max %d\n",MAX_HASH);
+	printf("option name Hash type spin default 256 min 4 max %d\n",MAX_HASH);
     printf("uciok\n");
 
-	int MB = 64;
+	int MB = 256;
 
 	while (TRUE) {
 		memset(&line[0], 0, sizeof(line));

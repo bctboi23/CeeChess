@@ -85,7 +85,7 @@ static void AddQuietMove( const S_BOARD *pos, int move, S_MOVELIST *list ) {
 
 	list->moves[list->count].move = move;
 
-	if(pos->searchKillers[0][pos->ply] == move) {
+  if(pos->searchKillers[0][pos->ply] == move) {
 		list->moves[list->count].score = 900000;
 	} else if(pos->searchKillers[1][pos->ply] == move) {
 		list->moves[list->count].score = 800000;
@@ -485,7 +485,3 @@ void GenerateAllCaps(const S_BOARD *pos, S_MOVELIST *list) {
 	}
     ASSERT(MoveListOk(list,pos));
 }
-
-
-
-

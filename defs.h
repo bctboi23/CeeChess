@@ -148,6 +148,7 @@ typedef struct {
 	float fh;
 	float fhf;
 	int nullCut;
+  int nodesPruned;
 
 	int GAME_MODE;
 	int POST_THINKING;
@@ -197,6 +198,10 @@ typedef struct {
 #define IsKi(p) (PieceKing[(p)])
 
 #define MIRROR64(sq) (Mirror64[(sq)])
+
+// for MDP
+#define MAX(a, b) ((a > b) ? a : b)
+#define MIN(a, b) ((a < b) ? a : b)
 
 /* GLOBALS */
 
@@ -311,7 +316,7 @@ extern int GetPvLine(const int depth, S_BOARD *pos);
 extern void ClearHashTable(S_HASHTABLE *table);
 
 // evaluate.c
-extern int EvalPosition(const S_BOARD *pos);
+extern int EvalPosition(S_BOARD *pos);
 extern void MirrorEvalTest(S_BOARD *pos) ;
 
 // uci.c
