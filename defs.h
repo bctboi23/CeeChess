@@ -23,7 +23,7 @@ exit(1);}
 
 typedef unsigned long long U64;
 
-#define NAME "seeChess 1.0"
+#define NAME "SeeChess v1.1"
 #define BRD_SQ_NUM 120
 
 #define MAXGAMEMOVES 2048
