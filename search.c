@@ -2,6 +2,7 @@
 
 #include "stdio.h"
 #include "defs.h"
+#include "math.h"
 
 // Null Move Pruning Values
 static const int R = 2;
@@ -14,7 +15,6 @@ static const int RazorMargin = 400;
 // LMR Values
 static const int LateMoveDepth = 3;
 static const int FullSearchMoves = 4;
-static const int ShallowReduceMoves = 6;
 
 int rootDepth;
 
@@ -104,6 +104,13 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 
 	if(IsRepetition(pos) || pos->fiftyMove >= 100) {
 		return 0;
+	}
+
+	// Mate Distance Pruning
+	alpha = MAX(alpha, -INFINITE + pos->ply);
+	beta = MIN(beta, INFINITE - pos->ply);
+	if (alpha >= beta) {
+		return alpha;
 	}
 
 	if(pos->ply > MAXDEPTH - 1) {
@@ -208,22 +215,22 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		return Score;
 	}
 
-	// Razoring
-	if (!PvMove && !InCheck && depth <= RazorDepth) {
-		if (EvalPosition(pos) + RazorMargin < alpha) {
-			// drop into qSearch if move most likely won't beat alpha
-			info->nodesPruned++;
-			return Quiescence(alpha, beta, pos, info);
-		}
-	}
-
 	// Null Move Pruning
-	if( DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0) && depth >= minDepth) {
+	if(depth >= minDepth && DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0)) {
 		MakeNullMove(pos);
 		Score = -AlphaBeta( -beta, -beta + 1, depth - 1 - R, pos, info, FALSE, FALSE);
 		TakeNullMove(pos);
 		if(info->stopped == TRUE) {
 			return 0;
+		}
+
+		// Razoring (not done if in null move)
+		if (depth <= RazorDepth && !PvMove && !InCheck && pos->history[pos->hisPly].move) {
+			if (EvalPosition(pos) + RazorMargin < alpha) {
+				// drop into qSearch if move most likely won't beat alpha
+				info->nodesPruned++;
+				return Quiescence(alpha, beta, pos, info);
+			}
 		}
 
 		if (Score >= beta && abs(Score) < ISMATE) {
@@ -268,8 +275,8 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		// PVS (speeds up search with good move ordering)
 		if (FoundPv == TRUE) {
 			// Late Move Reductions
-			if (DoLMR && depth >= LateMoveDepth && Legal > FullSearchMoves && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !(list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) {
-				int reduce = Legal > (FullSearchMoves + ShallowReduceMoves) ? depth / 3 : depth / 4;
+			if (depth >= LateMoveDepth && DoLMR && Legal > FullSearchMoves && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !(list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) {
+				int reduce = MAX(1, (log(depth) * log(Legal) / 1.7));
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1 - reduce, pos, info, TRUE, FALSE);
 			} else {
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, TRUE);
@@ -360,7 +367,7 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 		bestMove = pos->PvArray[0];
 		if(info->GAME_MODE == UCIMODE) {
 			if (abs(bestScore) > ISMATE) {
-				bestScore = (bestScore > 0 ? 30000 - bestScore + 1 : -30000 - bestScore) / 2;
+				bestScore = (bestScore > 0 ? INFINITE - bestScore + 1 : -INFINITE - bestScore) / 2;
 				printf("info score mate %d depth %d nodes %ld time %d ",
 					bestScore,currentDepth,info->nodes,GetTimeMs()-info->starttime);
 				} else {
