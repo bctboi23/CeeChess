@@ -10,7 +10,7 @@ static const int minDepth = 3;
 
 // Razoring Values
 static const int RazorDepth = 2;
-static const int RazorMargin = 400;
+static const int RazorMargin[3] = {0, 350, 500};
 
 // LMR Values
 static const int LateMoveDepth = 3;
@@ -106,15 +106,15 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 		return 0;
 	}
 
+	if(pos->ply > MAXDEPTH - 1) {
+		return EvalPosition(pos);
+	}
+
 	// Mate Distance Pruning
 	alpha = MAX(alpha, -INFINITE + pos->ply);
 	beta = MIN(beta, INFINITE - pos->ply);
 	if (alpha >= beta) {
 		return alpha;
-	}
-
-	if(pos->ply > MAXDEPTH - 1) {
-		return EvalPosition(pos);
 	}
 
 	int Score = EvalPosition(pos);
@@ -224,18 +224,18 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 			return 0;
 		}
 
-		// Razoring (not done if in null move)
-		if (depth <= RazorDepth && !PvMove && !InCheck && pos->history[pos->hisPly].move) {
-			if (EvalPosition(pos) + RazorMargin < alpha) {
-				// drop into qSearch if move most likely won't beat alpha
-				info->nodesPruned++;
-				return Quiescence(alpha, beta, pos, info);
-			}
-		}
-
 		if (Score >= beta && abs(Score) < ISMATE) {
 			info->nullCut++;
 			return beta;
+		}
+	}
+
+	// Razoring (not done if in null move)
+	if (depth <= RazorDepth && !PvMove && !InCheck && pos->history[pos->hisPly].move) {
+		if (EvalPosition(pos) + RazorMargin[depth] <= alpha) {
+			// drop into qSearch if move most likely won't beat alpha
+			info->nodesPruned++;
+			return Quiescence(alpha, beta, pos, info);
 		}
 	}
 
