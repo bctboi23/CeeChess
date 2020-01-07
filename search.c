@@ -10,7 +10,7 @@ static const int minDepth = 3;
 
 // Razoring Values
 static const int RazorDepth = 2;
-static const int RazorMargin[3] = {0, 350, 500};
+static const int RazorMargin[3] = {0, 300, 500};
 
 // LMR Values
 static const int LateMoveDepth = 3;
@@ -230,12 +230,14 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		}
 	}
 
-	// Razoring (not done if in null move)
-	if (depth <= RazorDepth && !PvMove && !InCheck && pos->history[pos->hisPly].move) {
-		if (EvalPosition(pos) + RazorMargin[depth] <= alpha) {
+	// Razoring
+	if (depth <= RazorDepth && !PvMove && !InCheck && EvalPosition(pos) + RazorMargin[depth] <= alpha) {
+		int razorAlpha = alpha - RazorMargin[depth];
+		Score = Quiescence(alpha, beta, pos, info);
+		if (Score <= razorAlpha) {
 			// drop into qSearch if move most likely won't beat alpha
 			info->nodesPruned++;
-			return Quiescence(alpha, beta, pos, info);
+			return Score;
 		}
 	}
 
@@ -276,7 +278,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		if (FoundPv == TRUE) {
 			// Late Move Reductions
 			if (depth >= LateMoveDepth && DoLMR && Legal > FullSearchMoves && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !(list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) {
-				int reduce = MAX(1, (log(depth) * log(Legal) / 1.7));
+				int reduce = log(depth) * log(Legal) / 1.7;
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1 - reduce, pos, info, TRUE, FALSE);
 			} else {
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, TRUE);
