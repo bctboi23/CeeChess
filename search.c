@@ -10,7 +10,7 @@ static const int minDepth = 3;
 
 // Razoring Values
 static const int RazorDepth = 3;
-static const int RazorMargin[3] = {200, 400, 600};
+static const int RazorMargin[4] = {0, 200, 400, 600};
 
 // LMR Values
 static const int LateMoveDepth = 3;
@@ -229,10 +229,10 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	}
 
 	// Razoring
-	if (depth <= RazorDepth && !PvMove && !InCheck && EvalPosition(pos) + RazorMargin[depth - 1] <= alpha) {
+	if (depth <= RazorDepth && !PvMove && !InCheck && EvalPosition(pos) + RazorMargin[depth] <= alpha) {
 		// drop into qSearch if move most likely won't beat alpha
-		Score = Quiescence(alpha - RazorMargin[depth - 1], beta - RazorMargin[depth - 1], pos, info);
-		if (Score + RazorMargin[depth - 1] <= alpha) {
+		Score = Quiescence(alpha - RazorMargin[depth], beta - RazorMargin[depth], pos, info);
+		if (Score + RazorMargin[depth] <= alpha) {
 			info->nodesPruned++;
 			return Score;
 		}
