@@ -16,8 +16,6 @@ static const int RazorMargin[3] = {200, 400, 600};
 static const int LateMoveDepth = 3;
 static const int FullSearchMoves = 4;
 
-int rootDepth;
-
 static void CheckUp(S_SEARCHINFO *info) {
 	// .. check if time up, or interrupt from GUI
 	if(info->timeset == TRUE && GetTimeMs() > info->stoptime) {
@@ -233,7 +231,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	// Razoring
 	if (depth <= RazorDepth && !PvMove && !InCheck && EvalPosition(pos) + RazorMargin[depth - 1] <= alpha) {
 		// drop into qSearch if move most likely won't beat alpha
-		Score = Quiescence(alpha, beta, pos, info);
+		Score = Quiescence(alpha - RazorMargin[depth - 1], beta - RazorMargin[depth - 1], pos, info);
 		if (Score + RazorMargin[depth - 1] <= alpha) {
 			info->nodesPruned++;
 			return Score;
@@ -357,7 +355,6 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 	// iterative deepening
 	for( currentDepth = 1; currentDepth <= info->depth; ++currentDepth ) {
 							// alpha	 beta
-		rootDepth = currentDepth;
 		bestScore = AlphaBeta(-INFINITE, INFINITE, currentDepth, pos, info, TRUE, TRUE);
 
 		if(info->stopped == TRUE) {
