@@ -12,6 +12,10 @@ static const int minDepth = 3;
 static const int RazorDepth = 3;
 static const int RazorMargin[4] = {0, 200, 400, 600};
 
+// Reverse Futility Values
+static const int RevFutilityDepth = 3;
+static const int RevFutilityMargin[4] = {0, 350, 500, 950};
+
 // LMR Values
 static const int LateMoveDepth = 3;
 static const int FullSearchMoves = 4;
@@ -199,8 +203,9 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		return alpha;
 	}
 
-	int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
+	const int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
 
+	// Check Extension
 	if(InCheck == TRUE) {
 		depth++;
 	}
@@ -213,8 +218,26 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		return Score;
 	}
 
+	const int positionEval = EvalPosition(pos);
+
+	// Razoring (alpha)
+	if (depth <= RazorDepth && !PvMove && !InCheck && positionEval + RazorMargin[depth] <= alpha) {
+		// drop into qSearch if move most likely won't beat alpha
+		Score = Quiescence(alpha - RazorMargin[depth], beta - RazorMargin[depth], pos, info);
+		if (Score + RazorMargin[depth] <= alpha) {
+			info->nodesPruned++;
+			return Score;
+		}
+	}
+
+	// Reverse Futility Pruning (beta)
+	if (depth <= RevFutilityDepth && !PvMove && !InCheck && abs(beta) < ISMATE && positionEval - RevFutilityMargin[depth] >= beta) {
+		info->nodesPruned++;
+		return positionEval - RevFutilityMargin[depth];
+	}
+
 	// Null Move Pruning
-	if(depth >= minDepth && DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0)) {
+	if(depth >= minDepth && DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0) && positionEval >= beta) {
 		MakeNullMove(pos);
 		Score = -AlphaBeta( -beta, -beta + 1, depth - 1 - R, pos, info, FALSE, FALSE);
 		TakeNullMove(pos);
@@ -225,16 +248,6 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		if (Score >= beta && abs(Score) < ISMATE) {
 			info->nullCut++;
 			return beta;
-		}
-	}
-
-	// Razoring
-	if (depth <= RazorDepth && !PvMove && !InCheck && EvalPosition(pos) + RazorMargin[depth] <= alpha) {
-		// drop into qSearch if move most likely won't beat alpha
-		Score = Quiescence(alpha - RazorMargin[depth], beta - RazorMargin[depth], pos, info);
-		if (Score + RazorMargin[depth] <= alpha) {
-			info->nodesPruned++;
-			return Score;
 		}
 	}
 
