@@ -206,7 +206,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	const int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
 
 	// Check Extension
-	if(InCheck == TRUE) {
+	if(InCheck) {
 		depth++;
 	}
 
@@ -252,11 +252,11 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	}
 
 	S_MOVELIST list[1];
-    GenerateAllMoves(pos,list);
+  GenerateAllMoves(pos,list);
 
-    int MoveNum = 0;
+  int MoveNum = 0;
 	int Legal = 0;
-	int OldAlpha = alpha;
+	const int OldAlpha = alpha;
 	int BestMove = NOMOVE;
 
 	int BestScore = -INFINITE;
@@ -286,9 +286,9 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		Legal++;
 		// PVS (speeds up search with good move ordering)
 		if (FoundPv == TRUE) {
-			// Late Move Reductions
-			if (depth >= LateMoveDepth && DoLMR && Legal > FullSearchMoves && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !(list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) {
-				int reduce = log(depth) * log(Legal) / 1.7;
+			// Late Move Reductions (reduces quiet moves if past full move search limit (not reducing checks, captures, promotions, and killers))
+			if (depth >= LateMoveDepth && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos) && DoLMR && Legal > FullSearchMoves && !(list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) {
+				const int reduce = log(depth) * log(Legal) / 1.7;
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1 - reduce, pos, info, TRUE, FALSE);
 			} else {
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, TRUE);
