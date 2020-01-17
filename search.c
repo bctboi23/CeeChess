@@ -3,22 +3,7 @@
 #include "stdio.h"
 #include "defs.h"
 #include "math.h"
-
-// Null Move Pruning Values
-static const int R = 2;
-static const int minDepth = 3;
-
-// Razoring Values
-static const int RazorDepth = 3;
-static const int RazorMargin[4] = {0, 200, 400, 600};
-
-// Reverse Futility Values
-static const int RevFutilityDepth = 3;
-static const int RevFutilityMargin[4] = {0, 350, 500, 950};
-
-// LMR Values
-static const int LateMoveDepth = 3;
-static const int FullSearchMoves = 4;
+#include "search.h"
 
 static void CheckUp(S_SEARCHINFO *info) {
 	// .. check if time up, or interrupt from GUI
@@ -177,6 +162,13 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	ASSERT(beta>alpha);
 	ASSERT(depth>=0);
 
+	const int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
+
+	// Check Extension (Extend all checks before dropping into Quiescence (+20 ELO Selfplay) (most likely gains less with a good king safety evaluation))
+	if(InCheck) {
+		depth++;
+	}
+
 	if(depth <= 0) {
 		return Quiescence(alpha, beta, pos, info);
 		// return EvalPosition(pos);
@@ -196,18 +188,11 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		return EvalPosition(pos);
 	}
 
-	// Mate Distance Pruning
+	// Mate Distance Pruning (finds shorter mates)
 	alpha = MAX(alpha, -INFINITE + pos->ply);
 	beta = MIN(beta, INFINITE - pos->ply);
 	if (alpha >= beta) {
 		return alpha;
-	}
-
-	const int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
-
-	// Check Extension
-	if(InCheck) {
-		depth++;
 	}
 
 	int Score = -INFINITE;
@@ -220,7 +205,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	const int positionEval = EvalPosition(pos);
 
-	// Razoring (alpha)
+	// Razoring (alpha) (+50 ELO)
 	if (depth <= RazorDepth && !PvMove && !InCheck && positionEval + RazorMargin[depth] <= alpha) {
 		// drop into qSearch if move most likely won't beat alpha
 		Score = Quiescence(alpha - RazorMargin[depth], beta - RazorMargin[depth], pos, info);
@@ -230,7 +215,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		}
 	}
 
-	// Reverse Futility Pruning (beta)
+	// Reverse Futility Pruning (beta) (+20 ELO)
 	if (depth <= RevFutilityDepth && !PvMove && !InCheck && abs(beta) < ISMATE && positionEval - RevFutilityMargin[depth] >= beta) {
 		info->nodesPruned++;
 		return positionEval - RevFutilityMargin[depth];
@@ -286,7 +271,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		Legal++;
 		// PVS (speeds up search with good move ordering)
 		if (FoundPv == TRUE) {
-			// Late Move Reductions (reduces quiet moves if past full move search limit (not reducing checks, captures, promotions, and killers))
+			// Late Move Reductions (reduces quiet moves if past full move search limit (not reducing checks, captures, promotions, and killers)) (+60 ELO)
 			if (depth >= LateMoveDepth && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos) && DoLMR && Legal > FullSearchMoves && !(list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) {
 				const int reduce = log(depth) * log(Legal) / 1.7;
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1 - reduce, pos, info, TRUE, FALSE);
