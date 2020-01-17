@@ -1,5 +1,5 @@
 # seeChess
-Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! I am around 2190 CCRL (2375 FIDE equivalent). If you want to try your hand at facing me, I am on lichess at https://lichess.org/@/seeChessBot
+Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! I am around 2200 CCRL (~2400 FIDE equivalent). If you want to try your hand at facing me, I am on lichess at https://lichess.org/@/seeChessBot
 
 My engine features include: alpha beta (with MVV/LVA, Killers, and History for move ordering), PV Search, Null Move Pruning, Late Move Reductions, Razoring, Mate Distance Pruning, a small Transposition Table, and PSQT + light heuristics for evaluation.
 
