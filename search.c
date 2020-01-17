@@ -3,7 +3,22 @@
 #include "stdio.h"
 #include "defs.h"
 #include "math.h"
-#include "search.h"
+
+// Null Move Pruning Values
+static const int R = 2;
+static const int minDepth = 3;
+
+// Razoring Values
+static const int RazorDepth = 3;
+static const int RazorMargin[4] = {0, 200, 400, 600};
+
+// Reverse Futility Values
+static const int RevFutilityDepth = 3;
+static const int RevFutilityMargin[4] = {0, 350, 500, 950};
+
+// LMR Values
+static const int LateMoveDepth = 3;
+static const int FullSearchMoves = 4;
 
 static void CheckUp(S_SEARCHINFO *info) {
 	// .. check if time up, or interrupt from GUI
