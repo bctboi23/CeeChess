@@ -21,10 +21,11 @@ Move Ordering:
 - History Ordering
 
 Evaluation:
+- Material
 - PSQT (Piece Square Tables)
-- 2 Bishops heuristic
+- Bishop pair heuristic
 - Simple Passed Pawn evaluation
-- Basic pawn structure (isolated, doubled)
+- Basic pawn structure (isolated)
 
 Planned Improvements (ordered by percieved feasibility):
 - Tapered Evaluation
