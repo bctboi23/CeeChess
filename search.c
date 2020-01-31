@@ -177,7 +177,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	ASSERT(beta>alpha);
 	ASSERT(depth>=0);
 
-	const int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
+	int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
 
 	// Check Extension (Extend all checks before dropping into Quiescence (+20 ELO Selfplay) (most likely gains less with a good king safety evaluation))
 	if(InCheck) {
@@ -218,7 +218,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		return Score;
 	}
 
-	const int positionEval = EvalPosition(pos);
+	int positionEval = EvalPosition(pos);
 
 	// Razoring (alpha) (+50 ELO)
 	if (depth <= RazorDepth && !PvMove && !InCheck && positionEval + RazorMargin[depth] <= alpha) {
@@ -256,7 +256,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
   int MoveNum = 0;
 	int Legal = 0;
-	const int OldAlpha = alpha;
+	int OldAlpha = alpha;
 	int BestMove = NOMOVE;
 
 	int BestScore = -INFINITE;
@@ -288,7 +288,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		if (FoundPv == TRUE) {
 			// Late Move Reductions (reduces quiet moves if past full move search limit (not reducing checks, captures, promotions, and killers)) (+60 ELO)
 			if (depth >= LateMoveDepth && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos) && DoLMR && Legal > FullSearchMoves && !(list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) {
-				const int reduce = log(depth) * log(Legal) / 1.7;
+				int reduce = log(depth) * log(Legal) / 1.7;
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1 - reduce, pos, info, TRUE, FALSE);
 			} else {
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, TRUE);
