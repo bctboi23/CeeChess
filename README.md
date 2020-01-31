@@ -25,7 +25,8 @@ Evaluation:
 - PSQT (Piece Square Tables)
 - Bishop pair heuristic
 - Simple Passed Pawn evaluation
-- Basic pawn structure (isolated)
+- Isolated pawn heuristic
+- Open file heuristics (for Rook and Queen)
 
 Planned Improvements (ordered by percieved feasibility):
 - Tapered Evaluation
