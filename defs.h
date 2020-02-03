@@ -148,7 +148,6 @@ typedef struct {
 	float fh;
 	float fhf;
 	int nullCut;
-  int nodesPruned;
 
 	int GAME_MODE;
 	int POST_THINKING;
