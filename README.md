@@ -1,5 +1,5 @@
 # seeChess
-Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! I am around 2200 CCRL (~2400 FIDE equivalent). If you want to try your hand at facing me, I am on lichess at https://lichess.org/@/seeChessBot
+Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! I am around 2200 CCRL. If you want to try your hand at facing me, I am on lichess at https://lichess.org/@/seeChessBot
 
 The Engine searches with a Principal Variation Search inside a Negamax framework (NegaScout). All engine features are listed below:
 
