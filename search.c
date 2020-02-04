@@ -91,6 +91,7 @@ static void ClearForSearch(S_BOARD *pos, S_SEARCHINFO *info) {
 	info->nodes = 0;
 	info->fh = 0;
 	info->fhf = 0;
+	info->nodesPruned = 0;
 }
 
 static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
@@ -224,12 +225,14 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		// drop into qSearch if move most likely won't beat alpha
 		Score = Quiescence(alpha - RazorMargin[depth], beta - RazorMargin[depth], pos, info);
 		if (Score + RazorMargin[depth] <= alpha) {
+			info->nodesPruned++;
 			return Score;
 		}
 	}
 
 	// Reverse Futility Pruning (beta) (+20 ELO)
 	if (depth <= RevFutilityDepth && !PvMove && !InCheck && abs(beta) < ISMATE && positionEval - RevFutilityMargin[depth] >= beta) {
+		info->nodesPruned++;
 		return positionEval - RevFutilityMargin[depth];
 	}
 
