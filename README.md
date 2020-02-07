@@ -1,7 +1,7 @@
 # seeChess
 Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! I am around 2200 CCRL. If you want to try your hand at facing me, I am on lichess at https://lichess.org/@/seeChessBot
 
-# ELO: ~2210
+**Rating**
 
 ```
 2/6/2020 7:19:20 PM :
