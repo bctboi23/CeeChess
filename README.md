@@ -1,7 +1,7 @@
 # seeChess
 Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! I am around 2200 CCRL. If you want to try your hand at facing me, I am on lichess at https://lichess.org/@/seeChessBot
 
-**Rating**
+**Rating:**
 
 ```
 2/6/2020 7:19:20 PM :
@@ -14,26 +14,30 @@ Hi! I am a bot written in C, heavily inspired by the Vice engine and video serie
   4 Vice10-64                      : 2066   36  36   267    30.0 %   2213   31.5 %
 ```
 
-The Engine searches with a Principal Variation Search inside a Negamax framework (NegaScout). All engine features are listed below:
+# Engine Features
 
-Lossless Pruning:
+**Search:**
+The Engine searches with a Principal Variation Search inside a Negamax framework
+
+**Lossless Pruning:**
 - Alpha-Beta pruning
 - Mate Distance pruning
 
-Lossy Pruning:
+**Lossy Pruning:**
 - Transposition Table
 - Razoring
 - Null Move Pruning
 - Late Move Reductions
 - Static Null Move Pruning (Reverse Futility Pruning)
 
-Move Ordering:
+**Move Ordering:**
+- PV Move
 - Transposition Table Ordering
 - MVV/LVA (Most Valuable Victim/Least Valuable Attacker)
 - 2 Killer Moves
 - History Ordering
 
-Evaluation:
+**Evaluation:**
 - Material
 - PSQT (Piece Square Tables)
 - Bishop pair heuristic
@@ -41,13 +45,13 @@ Evaluation:
 - Isolated pawn heuristic
 - Open file heuristics (for Rook and Queen)
 
-Planned Improvements (ordered by percieved feasibility):
+**Planned Improvements (ordered by percieved feasibility):**
 - Tapered Evaluation
 - Polyglot Opening Book
 - Syzygy Tablebases
 - Mobility
 
-Other Possible Improvements (No particular order):
+**Other Possible Improvements (No particular order):**
 - IID (Internal Iterative Deepening)
 - Futility Pruning
 - SEE (Static Exchange Evaluation)
