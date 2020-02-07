@@ -4,14 +4,11 @@ Hi! I am a bot written in C, heavily inspired by the Vice engine and video serie
 **Rating:**
 
 ```
-2/6/2020 7:19:20 PM :
-
-    Program                          Elo    +   -   Games   Score   Av.Op.  Draws
-
-  1 SeeChess                       : 2212   21  21   802    60.5 %   2139   28.9 %
-  2 MORA_1.1.0                     : 2207   35  35   268    49.1 %   2213   31.0 %
-  3 Raven0.50                      : 2139   37  37   267    39.5 %   2213   24.3 %
-  4 Vice10-64                      : 2066   36  36   267    30.0 %   2213   31.5 %
+Rank   Name      Elo    +   -   games   score    oppo.  draws
+  1 SeeChess   : 2212   21  21   802    60.5 %   2139   28.9 %
+  2 MORA_1.1.0 : 2207   35  35   268    49.1 %   2213   31.0 %
+  3 Raven0.50  : 2139   37  37   267    39.5 %   2213   24.3 %
+  4 Vice10-64  : 2066   36  36   267    30.0 %   2213   31.5 %
 ```
 
 # Engine Features
