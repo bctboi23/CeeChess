@@ -1,14 +1,22 @@
 #ifndef EVAL_H
 #define EVAL_H
 
+// Game phase constants
+const int minorPhase = 1;
+const int rookPhase = 2;
+const int queenPhase = 4;
+const int totalPhase = minorPhase * 8 + rookPhase * 4 + queenPhase * 2;
+
 // Evaluation constants
 const int PawnIsolated = -10;
-const int PawnPassed[8] = { 0, 5, 10, 20, 35, 60, 100, 200 };
+const int PawnPassedMG[8] = { 0, 5, 10, 20, 35, 50, 75, 150 };
+const int PawnPassedEG[8] = { 0, 5, 15, 30, 50, 75, 125, 250 };
 const int RookOpenFile = 10;
 const int RookSemiOpenFile = 5;
 const int QueenOpenFile = 5;
 const int QueenSemiOpenFile = 3;
-const int BishopPair = 30;
+const int BishopPairMG = 20;
+const int BishopPairEG = 35;
 
 // Piece Square Tables
 const int PawnTable[64] = {
@@ -55,7 +63,7 @@ const int RookTable[64] = {
 0	,	0	,	5	,	10	,	10	,	5	,	0	,	0
 };
 
-const int KingE[64] = {
+const int KingEG[64] = {
 	-50	,	-10	,	0	,	0	,	0	,	0	,	-10	,	-50	,
 	-10,	0	,	10	,	10	,	10	,	10	,	0	,	-10	,
 	0	,	10	,	20	,	20	,	20	,	20	,	10	,	0	,
@@ -66,7 +74,7 @@ const int KingE[64] = {
 	-50	,	-10	,	0	,	0	,	0	,	0	,	-10	,	-50
 };
 
-const int KingO[64] = {
+const int KingMG[64] = {
 	0	,	5	,	5	,	-10	,	-10	,	0	,	10	,	5	,
 	-30	,	-30	,	-30	,	-30	,	-30	,	-30	,	-30	,	-30	,
 	-50	,	-50	,	-50	,	-50	,	-50	,	-50	,	-50	,	-50	,

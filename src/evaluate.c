@@ -34,30 +34,39 @@ int EvalPosition(S_BOARD *pos) {
 
 	ASSERT(CheckBoard(pos));
 
-	int pce;
-	int pceNum;
-	int sq;
-	int score = pos->material[WHITE] - pos->material[BLACK];
-
+	// test for drawn position before doing anything
 	if(!pos->pceNum[wP] && !pos->pceNum[bP] && MaterialDraw(pos) == TRUE) {
 		return 0;
 	}
 
+	int pce;
+	int pceNum;
+	int sq;
+	int phase = totalPhase;
+	int scoreMG, scoreEG;
+	scoreMG = scoreEG = pos->material[WHITE] - pos->material[BLACK];
+	int score;
+
 	pce = wP;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
-		score += PawnTable[SQ64(sq)];
+
+		scoreMG += PawnTable[SQ64(sq)];
+		scoreEG += PawnTable[SQ64(sq)];
 
 		if( (IsolatedMask[SQ64(sq)] & pos->pawns[WHITE]) == 0) {
 			//printf("wP Iso:%s\n",PrSq(sq));
-			score += PawnIsolated;
+			scoreMG += PawnIsolated;
+			scoreEG += PawnIsolated;
 		}
 
 		if( (WhitePassedMask[SQ64(sq)] & pos->pawns[BLACK]) == 0) {
 			//printf("wP Passed:%s\n",PrSq(sq));
-			score += PawnPassed[RanksBrd[sq]];
+			scoreMG += PawnPassedMG[RanksBrd[sq]];
+			scoreEG += PawnPassedEG[RanksBrd[sq]];
 		}
 
 	}
@@ -65,107 +74,150 @@ int EvalPosition(S_BOARD *pos) {
 	pce = bP;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
 		ASSERT(SqOnBoard(sq));
 		ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
-		score -= PawnTable[MIRROR64(SQ64(sq))];
+
+		scoreMG -= PawnTable[MIRROR64(SQ64(sq))];
+		scoreEG -= PawnTable[MIRROR64(SQ64(sq))];
 
 		if( (IsolatedMask[SQ64(sq)] & pos->pawns[BLACK]) == 0) {
 			//printf("bP Iso:%s\n",PrSq(sq));
-			score -= PawnIsolated;
+			scoreMG -= PawnIsolated;
+			scoreEG -= PawnIsolated;
 		}
 
 		if( (BlackPassedMask[SQ64(sq)] & pos->pawns[WHITE]) == 0) {
 			//printf("bP Passed:%s\n",PrSq(sq));
-			score -= PawnPassed[7 - RanksBrd[sq]];
+			scoreMG -= PawnPassedMG[7 - RanksBrd[sq]];
+			scoreEG -= PawnPassedEG[7 - RanksBrd[sq]];
 		}
 	}
 
 	pce = wN;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
-		score += KnightTable[SQ64(sq)];
+
+		scoreMG += KnightTable[SQ64(sq)];
+		scoreEG += KnightTable[SQ64(sq)];
+		phase -= minorPhase;
 	}
 
 	pce = bN;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
 		ASSERT(SqOnBoard(sq));
 		ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
-		score -= KnightTable[MIRROR64(SQ64(sq))];
+
+		scoreMG -= KnightTable[MIRROR64(SQ64(sq))];
+		scoreEG -= KnightTable[MIRROR64(SQ64(sq))];
+		phase -= minorPhase;
 	}
 
 	pce = wB;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
-		score += BishopTable[SQ64(sq)];
+
+		scoreMG += BishopTable[SQ64(sq)];
+		scoreEG += BishopTable[SQ64(sq)];
+		phase -= minorPhase;
 	}
 
 	pce = bB;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
 		ASSERT(SqOnBoard(sq));
 		ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
-		score -= BishopTable[MIRROR64(SQ64(sq))];
+
+		scoreMG -= BishopTable[MIRROR64(SQ64(sq))];
+		scoreEG -= BishopTable[MIRROR64(SQ64(sq))];
+		phase -= minorPhase;
 	}
 
 	pce = wR;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
-		score += RookTable[SQ64(sq)];
-
 		ASSERT(FileRankValid(FilesBrd[sq]));
 
+		scoreMG += RookTable[SQ64(sq)];
+		scoreEG += RookTable[SQ64(sq)];
+
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
-			score += RookOpenFile;
+			scoreMG += RookOpenFile;
+			scoreEG += RookOpenFile;
 		} else if(!(pos->pawns[WHITE] & FileBBMask[FilesBrd[sq]])) {
-			score += RookSemiOpenFile;
+			scoreMG += RookSemiOpenFile;
+			scoreEG += RookSemiOpenFile;
 		}
+		phase -= rookPhase;
 	}
 
 	pce = bR;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
 		ASSERT(SqOnBoard(sq));
 		ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
-		score -= RookTable[MIRROR64(SQ64(sq))];
 		ASSERT(FileRankValid(FilesBrd[sq]));
+
+		scoreMG -= RookTable[MIRROR64(SQ64(sq))];
+		scoreEG -= RookTable[MIRROR64(SQ64(sq))];
+
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
-			score -= RookOpenFile;
+			scoreMG -= RookOpenFile;
+			scoreEG -= RookOpenFile;
 		} else if(!(pos->pawns[BLACK] & FileBBMask[FilesBrd[sq]])) {
-			score -= RookSemiOpenFile;
+			scoreMG -= RookSemiOpenFile;
+			scoreEG -= RookSemiOpenFile;
 		}
+		phase -= rookPhase;
 	}
 
 	pce = wQ;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
 		ASSERT(FileRankValid(FilesBrd[sq]));
+
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
-			score += QueenOpenFile;
+			scoreMG += QueenOpenFile;
+			scoreEG += QueenOpenFile;
 		} else if(!(pos->pawns[WHITE] & FileBBMask[FilesBrd[sq]])) {
-			score += QueenSemiOpenFile;
+			scoreMG += QueenSemiOpenFile;
+			scoreEG += QueenSemiOpenFile;
 		}
+		phase -= queenPhase;
 	}
 
 	pce = bQ;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
 		ASSERT(FileRankValid(FilesBrd[sq]));
+
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
-			score -= QueenOpenFile;
+			scoreMG -= QueenOpenFile;
+			scoreEG -= QueenOpenFile;
 		} else if(!(pos->pawns[BLACK] & FileBBMask[FilesBrd[sq]])) {
-			score -= QueenSemiOpenFile;
+			scoreMG -= QueenSemiOpenFile;
+			scoreEG -= QueenSemiOpenFile;
 		}
+		phase -= queenPhase;
 	}
 	//8/p6k/6p1/5p2/P4K2/8/5pB1/8 b - - 2 62
 	pce = wK;
@@ -173,29 +225,29 @@ int EvalPosition(S_BOARD *pos) {
 	ASSERT(SqOnBoard(sq));
 	ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
 
-	if( (pos->material[BLACK] <= ENDGAME_MAT) ) {
-		score += KingE[SQ64(sq)];
-	} else {
-		score += KingO[SQ64(sq)];
-	}
+	scoreMG += KingMG[SQ64(sq)];
+	scoreEG += KingEG[SQ64(sq)];
 
 	pce = bK;
 	sq = pos->pList[pce][0];
 	ASSERT(SqOnBoard(sq));
 	ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
 
-	if( (pos->material[WHITE] <= ENDGAME_MAT) ) {
-		score -= KingE[MIRROR64(SQ64(sq))];
-	} else {
-		score -= KingO[MIRROR64(SQ64(sq))];
+	scoreMG -= KingMG[MIRROR64(SQ64(sq))];
+	scoreEG -= KingEG[MIRROR64(SQ64(sq))];
+
+	if(pos->pceNum[wB] >= 2) {
+		scoreMG += BishopPairMG
+		scoreEG += BishopPairEG
+	}
+	if(pos->pceNum[bB] >= 2) {
+		scoreMG -= BishopPairMG
+		scoreEG -= BishopPairEG
 	}
 
-	if(pos->pceNum[wB] >= 2) score += BishopPair;
-	if(pos->pceNum[bB] >= 2) score -= BishopPair;
+	phase = (phase * 256 + (totalPhase / 2)) / totalPhase;
+	score = ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
 
-	if(pos->side == WHITE) {
-		return score;
-	} else {
-		return -score;
-	}
+	return pos->side == WHITE ? score : -score;
+
 }
