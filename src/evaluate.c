@@ -28,8 +28,6 @@ static int MaterialDraw(const S_BOARD *pos) {
   return FALSE;
 }
 
-#define ENDGAME_MAT (1 * PieceVal[wR] + 2 * PieceVal[wN] + 2 * PieceVal[wP] + PieceVal[wK])
-
 int EvalPosition(S_BOARD *pos) {
 
 	ASSERT(CheckBoard(pos));
@@ -54,8 +52,8 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
 
-		scoreMG += PawnTable[SQ64(sq)];
-		scoreEG += PawnTable[SQ64(sq)];
+		scoreMG += PawnMG[SQ64(sq)];
+		scoreEG += PawnEG[SQ64(sq)];
 
 		if( (IsolatedMask[SQ64(sq)] & pos->pawns[WHITE]) == 0) {
 			//printf("wP Iso:%s\n",PrSq(sq));
@@ -78,8 +76,8 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(SqOnBoard(sq));
 		ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
 
-		scoreMG -= PawnTable[MIRROR64(SQ64(sq))];
-		scoreEG -= PawnTable[MIRROR64(SQ64(sq))];
+		scoreMG -= PawnMG[MIRROR64(SQ64(sq))];
+		scoreEG -= PawnEG[MIRROR64(SQ64(sq))];
 
 		if( (IsolatedMask[SQ64(sq)] & pos->pawns[BLACK]) == 0) {
 			//printf("bP Iso:%s\n",PrSq(sq));
@@ -101,8 +99,8 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
 
-		scoreMG += KnightTable[SQ64(sq)];
-		scoreEG += KnightTable[SQ64(sq)];
+		scoreMG += KnightMG[SQ64(sq)];
+		scoreEG += KnightEG[SQ64(sq)];
 		phase -= minorPhase;
 	}
 
@@ -113,8 +111,8 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(SqOnBoard(sq));
 		ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
 
-		scoreMG -= KnightTable[MIRROR64(SQ64(sq))];
-		scoreEG -= KnightTable[MIRROR64(SQ64(sq))];
+		scoreMG -= KnightMG[MIRROR64(SQ64(sq))];
+		scoreEG -= KnightEG[MIRROR64(SQ64(sq))];
 		phase -= minorPhase;
 	}
 
@@ -125,8 +123,8 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
 
-		scoreMG += BishopTable[SQ64(sq)];
-		scoreEG += BishopTable[SQ64(sq)];
+		scoreMG += BishopMG[SQ64(sq)];
+		scoreEG += BishopEG[SQ64(sq)];
 		phase -= minorPhase;
 	}
 
@@ -137,8 +135,8 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(SqOnBoard(sq));
 		ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
 
-		scoreMG -= BishopTable[MIRROR64(SQ64(sq))];
-		scoreEG -= BishopTable[MIRROR64(SQ64(sq))];
+		scoreMG -= BishopMG[MIRROR64(SQ64(sq))];
+		scoreEG -= BishopEG[MIRROR64(SQ64(sq))];
 		phase -= minorPhase;
 	}
 
@@ -150,8 +148,8 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
 		ASSERT(FileRankValid(FilesBrd[sq]));
 
-		scoreMG += RookTable[SQ64(sq)];
-		scoreEG += RookTable[SQ64(sq)];
+		scoreMG += RookMG[SQ64(sq)];
+		scoreEG += RookEG[SQ64(sq)];
 
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
 			scoreMG += RookOpenFile;
@@ -171,8 +169,8 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
 		ASSERT(FileRankValid(FilesBrd[sq]));
 
-		scoreMG -= RookTable[MIRROR64(SQ64(sq))];
-		scoreEG -= RookTable[MIRROR64(SQ64(sq))];
+		scoreMG -= RookMG[MIRROR64(SQ64(sq))];
+		scoreEG -= RookEG[MIRROR64(SQ64(sq))];
 
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
 			scoreMG -= RookOpenFile;
@@ -192,6 +190,9 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
 		ASSERT(FileRankValid(FilesBrd[sq]));
 
+		scoreMG += QueenMG[SQ64(sq)];
+		scoreEG += QueenEG[SQ64(sq)];
+
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
 			scoreMG += QueenOpenFile;
 			scoreEG += QueenOpenFile;
@@ -209,6 +210,9 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
 		ASSERT(FileRankValid(FilesBrd[sq]));
+
+		scoreMG -= QueenMG[MIRROR64(SQ64(sq))];
+		scoreEG -= QueenEG[MIRROR64(SQ64(sq))];
 
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
 			scoreMG -= QueenOpenFile;
@@ -237,12 +241,12 @@ int EvalPosition(S_BOARD *pos) {
 	scoreEG -= KingEG[MIRROR64(SQ64(sq))];
 
 	if(pos->pceNum[wB] >= 2) {
-		scoreMG += BishopPairMG
-		scoreEG += BishopPairEG
+		scoreMG += BishopPairMG;
+		scoreEG += BishopPairEG;
 	}
 	if(pos->pceNum[bB] >= 2) {
-		scoreMG -= BishopPairMG
-		scoreEG -= BishopPairEG
+		scoreMG -= BishopPairMG;
+		scoreEG -= BishopPairEG;
 	}
 
 	phase = (phase * 256 + (totalPhase / 2)) / totalPhase;

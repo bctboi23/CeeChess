@@ -13,8 +13,8 @@ static const int RazorDepth = 3;
 static const int RazorMargin[4] = {0, 200, 400, 600};
 
 // Reverse Futility Values
-static const int RevFutilityDepth = 3;
-static const int RevFutilityMargin[4] = {0, 350, 500, 950};
+static const int RevFutilityDepth = 4;
+static const int RevFutilityMargin[5] = {0, 250, 500, 750, 1000};
 
 // LMR Values
 static const int LateMoveDepth = 3;
