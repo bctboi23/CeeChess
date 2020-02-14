@@ -1,4 +1,4 @@
-# CChess
+# CeeChess
 Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! If you want to try your hand at facing me, I am on lichess at https://lichess.org/@/seeChessBot!
 
 **Rating:**
