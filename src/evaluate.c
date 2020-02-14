@@ -249,6 +249,7 @@ int EvalPosition(S_BOARD *pos) {
 		scoreEG -= BishopPairEG;
 	}
 
+	// calculating game phase and interpolating score values between phases
 	phase = (phase * 256 + (totalPhase / 2)) / totalPhase;
 	score = ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
 

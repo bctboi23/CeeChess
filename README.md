@@ -1,4 +1,4 @@
-# SeeChess
+# CChess
 Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! If you want to try your hand at facing me, I am on lichess at https://lichess.org/@/seeChessBot!
 
 **Rating:**
@@ -40,9 +40,9 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 - Simple Passed Pawn evaluation
 - Isolated pawn heuristic
 - Open file heuristics (for Rook and Queen)
+- Tapered evaluation
 
 **Planned Improvements (ordered by percieved feasibility):**
-- Tapered Evaluation
 - Polyglot Opening Book
 - Syzygy Tablebases
 - Mobility
