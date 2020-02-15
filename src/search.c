@@ -13,8 +13,8 @@ static const int RazorDepth = 3;
 static const int RazorMargin[4] = {0, 200, 400, 600};
 
 // Reverse Futility Values
-static const int RevFutilityDepth = 3;
-static const int RevFutilityMargin[4] = {0, 350, 500, 950};
+static const int RevFutilityDepth = 4;
+static const int RevFutilityMargin[5] = {0, 250, 500, 750, 1000};
 
 // LMR Values
 static const int LateMoveDepth = 3;
@@ -410,7 +410,7 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 		printf("move %s\n",PrMove(bestMove));
 		MakeMove(pos, bestMove);
 	} else {
-		printf("\n\n***!! seeChess makes move %s !!***\n\n",PrMove(bestMove));
+		printf("\n\n***!! CeeChess makes move %s !!***\n\n",PrMove(bestMove));
 		MakeMove(pos, bestMove);
 		PrintBoard(pos);
 	}
