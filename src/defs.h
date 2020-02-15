@@ -23,7 +23,7 @@ exit(1);}
 
 typedef unsigned long long U64;
 
-#define NAME "CChess_v1.3"
+#define NAME "CeeChess_v1.3"
 #define BRD_SQ_NUM 120
 
 #define MAXGAMEMOVES 2048

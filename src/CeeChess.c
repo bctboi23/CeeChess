@@ -21,7 +21,7 @@ int main() {
 	setbuf(stdin, NULL);
     setbuf(stdout, NULL);
 
-	printf("Welcome to CChess! Type 'CChess' for console mode...\n");
+	printf("Welcome to CeeChess! Type 'CeeChess' for console mode...\n");
 
 	char line[256];
 	while (TRUE) {
@@ -40,7 +40,7 @@ int main() {
 			XBoard_Loop(pos, info);
 			if(info->quit == TRUE) break;
 			continue;
-		} else if (!strncmp(line, "CChess",6))	{
+		} else if (!strncmp(line, "CeeChess",8))	{
 			Console_Loop(pos, info);
 			if(info->quit == TRUE) break;
 			continue;
