@@ -33,6 +33,7 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 - Razoring
 - Null Move Pruning
 - Late Move Reductions
+- Futility Pruning
 - Static Null Move Pruning (Reverse Futility Pruning)
 
 **Move Ordering:**
