@@ -33,25 +33,26 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 - Razoring
 - Null Move Pruning
 - Late Move Reductions
+- Futility Pruning
 - Static Null Move Pruning (Reverse Futility Pruning)
 
 **Move Ordering:**
 - PV Move
 - Transposition Table Ordering
-- MVV/LVA (Most Valuable Victim/Least Valuable Attacker)
+- Captures ordered by MVV/LVA (Most Valuable Victim/Least Valuable Attacker)
 - 2 Killer Moves
 - History Ordering
 
 **Evaluation:**
 - Material
 - PSQT (Midgame and Endgame, from Lyudmil)
-- Bishop pair heuristic
-- Simple Passed Pawn evaluation
+- Bishop pair heuristic (for Midgame and Endgame)
+- Passed Pawn evaluation (Midgame and Endgame tables)
 - Isolated pawn heuristic
 - Open file heuristics (for Rook and Queen)
 - Tapered evaluation
 
-**Planned Improvements (ordered by percieved feasibility):**
+**Planned Improvements (ordered by perceived feasibility):**
 - Polyglot Opening Book
 - Syzygy Tablebases
 - Mobility
@@ -64,4 +65,4 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 - King Safety
 - Aspiration Windows
 
-None of the code I write is copywrighted or protected in any way, and you may make use of all that you wish. You do not have to credit me if you use any of the code I write, but it would be great if you did
+None of the code I write is copyrighted or protected in any way, and you may make use of all that you wish. You do not have to credit me if you use any of the code I write, but it would be great if you did
