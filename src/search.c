@@ -12,13 +12,25 @@ static const int minDepth = 3;
 static const int RazorDepth = 3;
 static const int RazorMargin[4] = {0, 200, 400, 600};
 
+// Futility Values
+static const int FutilityDepth = 5;
+static const int FutilityMargin[6] = {0, 200, 325, 450, 575, 700};
+
 // Reverse Futility Values
 static const int RevFutilityDepth = 4;
 static const int RevFutilityMargin[5] = {0, 250, 500, 750, 1000};
 
 // LMR Values
 static const int LateMoveDepth = 3;
-static const int FullSearchMoves = 4;
+static const int FullSearchMoves = 3;
+int LMRTable[64][64];
+
+void InitSearch() {
+	// creating the LMR table entries (idea from Ethereal)
+	for (int moveDepth = 1; moveDepth < 64; moveDepth++)
+  	for (int played = 1; played < 64; played++)
+      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 1.9);
+}
 
 static void CheckUp(S_SEARCHINFO *info) {
 	// .. check if time up, or interrupt from GUI
@@ -178,7 +190,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
 
-	// Check Extension (Extend all checks before dropping into Quiescence (+20 ELO Selfplay) (most likely gains less with a good king safety evaluation))
+	// Check Extension (Extend all checks before dropping into Quiescence)
 	if(InCheck) {
 		depth++;
 	}
@@ -202,7 +214,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		return EvalPosition(pos);
 	}
 
-	// Mate Distance Pruning (finds shorter mates)
+	// Mate Distance Pruning (finds mates more quickly)
 	alpha = MAX(alpha, -INFINITE + pos->ply);
 	beta = MIN(beta, INFINITE - pos->ply);
 	if (alpha >= beta) {
@@ -219,7 +231,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	int positionEval = EvalPosition(pos);
 
-	// Razoring (alpha) (+50 ELO)
+	// Razoring (prunes near alpha)
 	if (depth <= RazorDepth && !PvMove && !InCheck && positionEval + RazorMargin[depth] <= alpha) {
 		// drop into qSearch if move most likely won't beat alpha
 		Score = Quiescence(alpha - RazorMargin[depth], beta - RazorMargin[depth], pos, info);
@@ -228,7 +240,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		}
 	}
 
-	// Reverse Futility Pruning (beta) (+20 ELO)
+	// Reverse Futility Pruning (prunes near beta)
 	if (depth <= RevFutilityDepth && !PvMove && !InCheck && abs(beta) < ISMATE && positionEval - RevFutilityMargin[depth] >= beta) {
 		return positionEval - RevFutilityMargin[depth];
 	}
@@ -272,29 +284,60 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	int FoundPv = FALSE;
 
+	// Futility pruning flag (if this flag is on, prune at the futile node)
+	int FutileNode = (depth <= FutilityDepth && positionEval + FutilityMargin[depth] <= alpha && abs(Score) < ISMATE) ? 1 : 0;
+
 	for(MoveNum = 0; MoveNum < list->count; ++MoveNum) {
 
 		PickNextMove(MoveNum, list);
 
-        if ( !MakeMove(pos,list->moves[MoveNum].move))  {
-            continue;
-        }
+    if ( !MakeMove(pos,list->moves[MoveNum].move))  {
+        continue;
+    }
+
+		// Futility Pruning
+		if (Legal && FutileNode && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos)) {
+			TakeMove(pos);
+			continue;
+		}
 
 		Legal++;
+
 		// PVS (speeds up search with good move ordering)
 		if (FoundPv == TRUE) {
-			// Late Move Reductions (reduces quiet moves if past full move search limit (not reducing checks, captures, promotions, and killers)) (+60 ELO)
-			if (depth >= LateMoveDepth && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos) && DoLMR && Legal > FullSearchMoves && !(list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) {
-				int reduce = log(depth) * log(Legal) / 1.7;
-				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1 - reduce, pos, info, TRUE, FALSE);
+
+			// Late Move Reductions at Root (reduces moves if past full move search limit (not reducing captures, checks, or promotions))
+			if (depth >= LateMoveDepth && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos) && DoLMR && Legal > FullSearchMoves) {
+
+				// get initial reduction depth
+				int reduce = LMRTable[MIN(depth, 63)][MIN(Legal, 63)];
+
+				// reduce less for killer moves
+				if ((list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) reduce--;
+
+				// do not fall directly into quiescence search
+				reduce = MIN(depth - 1, MAX(reduce, 1));
+
+				// print reduction depth at move number
+				// printf("reduction: %d depth: %d moveNum: %d\n", (reduce - 1), depth, Legal);
+
+				// search with the reduced depth
+				Score = -AlphaBeta( -alpha - 1, -alpha, depth - reduce, pos, info, TRUE, FALSE);
+
 			} else {
+				// If LMR conditions not met (not at root, or tactical move), do a null window search (because we are using PVS)
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, TRUE);
+
 			}
 			if (Score > alpha && Score < beta) {
-				Score = -AlphaBeta( -beta, -alpha, depth-1, pos, info, TRUE, FALSE);
+				// If the LMR or the null window fails, do a full search
+				Score = -AlphaBeta( -beta, -alpha, depth - 1, pos, info, TRUE, FALSE);
+
 			}
 		} else {
-			Score = -AlphaBeta( -beta, -alpha, depth-1, pos, info, TRUE, FALSE);
+			// If no PV found, do a full search
+			Score = -AlphaBeta( -beta, -alpha, depth - 1, pos, info, TRUE, FALSE);
+
 		}
 
 		TakeMove(pos);

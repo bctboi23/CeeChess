@@ -185,4 +185,5 @@ void AllInit() {
 	InitFilesRanksBrd();
 	InitEvalMasks();
 	InitMvvLva();
+	InitSearch();
 }
