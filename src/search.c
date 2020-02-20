@@ -9,12 +9,12 @@ static const int R = 2;
 static const int minDepth = 3;
 
 // Razoring Values
-static const int RazorDepth = 3;
-static const int RazorMargin[4] = {0, 200, 400, 600};
+static const int RazorDepth = 2;
+static const int RazorMargin[3] = {0, 200, 400};
 
 // Futility Values
-static const int FutilityDepth = 5;
-static const int FutilityMargin[6] = {0, 200, 325, 450, 575, 700};
+static const int FutilityDepth = 6;
+static const int FutilityMargin[7] = {0, 200, 325, 450, 575, 700, 825};
 
 // Reverse Futility Values
 static const int RevFutilityDepth = 4;
@@ -22,14 +22,14 @@ static const int RevFutilityMargin[5] = {0, 250, 500, 750, 1000};
 
 // LMR Values
 static const int LateMoveDepth = 3;
-static const int FullSearchMoves = 3;
+static const int FullSearchMoves = 4;
 int LMRTable[64][64];
 
 void InitSearch() {
 	// creating the LMR table entries (idea from Ethereal)
 	for (int moveDepth = 1; moveDepth < 64; moveDepth++)
   	for (int played = 1; played < 64; played++)
-      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 1.9);
+      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 1.7);
 }
 
 static void CheckUp(S_SEARCHINFO *info) {
@@ -284,22 +284,22 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	int FoundPv = FALSE;
 
-	// Futility pruning flag (if this flag is on, prune at the futile node)
+	// Futility Pruning flag (if node is futile (unlikely to raise alpha), this flag is set)
 	int FutileNode = (depth <= FutilityDepth && positionEval + FutilityMargin[depth] <= alpha && abs(Score) < ISMATE) ? 1 : 0;
 
 	for(MoveNum = 0; MoveNum < list->count; ++MoveNum) {
 
 		PickNextMove(MoveNum, list);
 
+		// Futility Pruning (if node is considered futile, and at least 1 legal move has been searched, don't search any more quiet moves in the position)
+		if (Legal && FutileNode && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos)) {
+			continue;
+		}
+
+		// if move is legal, play it
     if ( !MakeMove(pos,list->moves[MoveNum].move))  {
         continue;
     }
-
-		// Futility Pruning
-		if (Legal && FutileNode && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos)) {
-			TakeMove(pos);
-			continue;
-		}
 
 		Legal++;
 
