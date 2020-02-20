@@ -301,6 +301,7 @@ extern void PerftTest(int depth, S_BOARD *pos);
 
 // search.c
 extern void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info);
+extern void InitSearch();
 
 // misc.c
 extern int GetTimeMs();
