@@ -38,10 +38,9 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 
 **Move Ordering:**
 - PV Move
-- Transposition Table Ordering
 - Captures ordered by MVV/LVA (Most Valuable Victim/Least Valuable Attacker)
 - 2 Killer Moves
-- History Ordering
+- Quiet moves ordered by history heuristic
 
 **Evaluation:**
 - Material
@@ -53,16 +52,17 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 - Tapered evaluation
 
 **Planned Improvements (ordered by perceived feasibility):**
-- Polyglot Opening Book
 - Syzygy Tablebases
+- King Safety
 - Mobility
+- SEE (Static Exchange Evaluation)
 
 **Other Possible Improvements (No particular order):**
 - IID (Internal Iterative Deepening)
-- Futility Pruning
-- SEE (Static Exchange Evaluation)
+- Countermove Tables
+- Singular Extensions
+- Probcut
 - Bitboards
-- King Safety
 - Aspiration Windows
 
 None of the code I write is copyrighted or protected in any way, and you may make use of all that you wish. You do not have to credit me if you use any of the code I write, but it would be great if you did
