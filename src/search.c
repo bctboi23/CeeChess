@@ -17,19 +17,19 @@ static const int FutilityDepth = 6;
 static const int FutilityMargin[7] = {0, 200, 325, 450, 575, 700, 825};
 
 // Reverse Futility Values
-static const int RevFutilityDepth = 4;
-static const int RevFutilityMargin[5] = {0, 250, 500, 750, 1000};
+static const int RevFutilityDepth = 5;
+static const int RevFutilityMargin[6] = {0, 200, 400, 600, 800, 1000};
 
 // LMR Values
 static const int LateMoveDepth = 3;
-static const int FullSearchMoves = 4;
+static const int FullSearchMoves = 2;
 int LMRTable[64][64];
 
 void InitSearch() {
 	// creating the LMR table entries (idea from Ethereal)
 	for (int moveDepth = 1; moveDepth < 64; moveDepth++)
   	for (int played = 1; played < 64; played++)
-      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 1.7);
+      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 1.75);
 }
 
 static void CheckUp(S_SEARCHINFO *info) {
