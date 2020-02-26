@@ -44,15 +44,9 @@ static void CheckUp(S_SEARCHINFO *info) {
 	ReadInput(info);
 }
 
-static void PickNextMove(int moveNum, S_MOVELIST *list, S_BOARD *pos) {
-
-	S_MOVE temp;
-	int index = 0;
-	int bestScore = 0;
-	int bestNum = moveNum;
-
+static void SEEOrdering(S_MOVELIST *list, S_BOARD *pos) {
+	// Calculate SEE for Captures (order losing captures after killer moves)
 	for (index = moveNum; index < list->count; ++index) {
-		// Calculate SEE for Captures (order negative SEE after killer moves)
 		if (list->moves[index].move & MFLAGCAP) {
 			int SEEval = SEECapture(list->moves[index].move, pos)
 
@@ -64,7 +58,17 @@ static void PickNextMove(int moveNum, S_MOVELIST *list, S_BOARD *pos) {
 				list->moves[index].score = 800000 - SEEval;
 			}
 		}
+	}
+}
 
+static void PickNextMove(int moveNum, S_MOVELIST *list, S_BOARD *pos) {
+
+	S_MOVE temp;
+	int index = 0;
+	int bestScore = 0;
+	int bestNum = moveNum;
+
+	for (index = moveNum; index < list->count; ++index) {
 
 		if (list->moves[index].score > bestScore) {
 			bestScore = list->moves[index].score;
@@ -309,6 +313,9 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	// Futility Pruning flag (if node is futile (unlikely to raise alpha), this flag is set)
 	int FutileNode = (depth <= FutilityDepth && positionEval + FutilityMargin[depth] <= alpha && abs(Score) < ISMATE) ? 1 : 0;
+
+	// before entering the move loop, calculate capture scores using SEE (can use these move ordering scores for reductions in LMR)
+	SEEOrdering(list, pos);
 
 	for(MoveNum = 0; MoveNum < list->count; ++MoveNum) {
 
