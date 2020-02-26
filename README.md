@@ -37,9 +37,11 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 
 **Move Ordering:**
 - PV Move
-- Captures ordered by MVV/LVA (Most Valuable Victim/Least Valuable Attacker)
+- Winning and equal captures (ordered by SEE)
 - 2 Killer Moves
+- Losing captures (ordered by SEE)
 - Quiet moves ordered by history heuristic
+- (capture moves are ordered by MVV/LVA in Quiescence search)
 
 **Evaluation:**
 - Material
