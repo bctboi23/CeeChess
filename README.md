@@ -34,6 +34,7 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 - Late Move Reductions
 - Futility Pruning
 - Static Null Move Pruning (Reverse Futility Pruning)
+- Delta Pruning in Quiescence
 
 **Move Ordering:**
 - PV Move
