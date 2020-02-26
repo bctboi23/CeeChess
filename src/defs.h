@@ -326,4 +326,7 @@ extern void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info);
 extern void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info);
 extern void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info);
 
+// see.c
+extern int SEECapture(int move, S_BOARD *pos);
+
 #endif

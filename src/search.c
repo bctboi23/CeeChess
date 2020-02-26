@@ -4,6 +4,9 @@
 #include "defs.h"
 #include "math.h"
 
+// Delta Pruning Value
+static const int Delta = 1000;
+
 // Null Move Pruning Values
 static const int R = 2;
 static const int minDepth = 3;
@@ -41,7 +44,7 @@ static void CheckUp(S_SEARCHINFO *info) {
 	ReadInput(info);
 }
 
-static void PickNextMove(int moveNum, S_MOVELIST *list) {
+static void PickNextMove(int moveNum, S_MOVELIST *list, S_BOARD *pos) {
 
 	S_MOVE temp;
 	int index = 0;
@@ -49,6 +52,20 @@ static void PickNextMove(int moveNum, S_MOVELIST *list) {
 	int bestNum = moveNum;
 
 	for (index = moveNum; index < list->count; ++index) {
+		// Calculate SEE for Captures (order negative SEE after killer moves)
+		if (list->moves[index].move & MFLAGCAP) {
+			int SEEval = SEECapture(list->moves[index].move, pos)
+
+			// If SEE is negative, order after killer moves
+			if (SEEval >= 0) {
+				list->moves[index].score = 1000000 + SEEval;
+			}
+			else {
+				list->moves[index].score = 800000 - SEEval;
+			}
+		}
+
+
 		if (list->moves[index].score > bestScore) {
 			bestScore = list->moves[index].score;
 			bestNum = index;
@@ -138,6 +155,12 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 		return beta;
 	}
 
+	// delta pruning (test if any capture can improve position)
+	if (Score + Delta < alpha) {
+		// if no move can improve alpha, return
+		return alpha;
+	}
+
 	if(Score > alpha) {
 		alpha = Score;
 	}
@@ -151,7 +174,7 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 
 	for(MoveNum = 0; MoveNum < list->count; ++MoveNum) {
 
-		PickNextMove(MoveNum, list);
+		PickNextMove(MoveNum, list, pos);
 
         if ( !MakeMove(pos,list->moves[MoveNum].move))  {
             continue;
@@ -289,7 +312,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	for(MoveNum = 0; MoveNum < list->count; ++MoveNum) {
 
-		PickNextMove(MoveNum, list);
+		PickNextMove(MoveNum, list, pos);
 
 		// Futility Pruning (if node is considered futile, and at least 1 legal move has been searched, don't search any more quiet moves in the position)
 		if (Legal && FutileNode && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos)) {
@@ -442,9 +465,11 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 			}
 			printf("\n");
 		}
-
-		//printf("Hits:%d Overwrite:%d NewWrite:%d Cut:%d\nOrdering %.2f NullCut:%d",pos->HashTable->hit,pos->HashTable->overWrite,pos->HashTable->newWrite,pos->HashTable->cut,
-		//(info->fhf/info->fh)*100,info->nullCut);
+		/*
+		Move statistics (like ordering, transpostion table stats, and null move stats)
+		printf("Hits:%d Overwrite:%d NewWrite:%d Cut:%d\nOrdering %.2f NullCut:%d\n",pos->HashTable->hit,pos->HashTable->overWrite,pos->HashTable->newWrite,pos->HashTable->cut,
+		(info->fhf/info->fh)*100,info->nullCut);
+		*/
 	}
 
 	if(info->GAME_MODE == UCIMODE) {
