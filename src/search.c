@@ -44,22 +44,27 @@ static void CheckUp(S_SEARCHINFO *info) {
 	ReadInput(info);
 }
 
+
 static void SEEOrdering(S_MOVELIST *list, S_BOARD *pos) {
+
 	// Calculate SEE for Captures (order losing captures after killer moves)
-	for (index = moveNum; index < list->count; ++index) {
+
+	for (int index = 0; index < list->count; ++index) {
+
 		if (list->moves[index].move & MFLAGCAP) {
-			int SEEval = SEECapture(list->moves[index].move, pos)
+			int SEEval = SEECapture(list->moves[index].move, pos);
 
 			// If SEE is negative, order after killer moves
 			if (SEEval >= 0) {
 				list->moves[index].score = 1000000 + SEEval;
+			} else {
+				list->moves[index].score = 800000 + SEEval;
 			}
-			else {
-				list->moves[index].score = 800000 - SEEval;
-			}
+
 		}
 	}
 }
+
 
 static void PickNextMove(int moveNum, S_MOVELIST *list, S_BOARD *pos) {
 
@@ -158,13 +163,13 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 	if(Score >= beta) {
 		return beta;
 	}
-
+/*
 	// delta pruning (test if any capture can improve position)
 	if (Score + Delta < alpha) {
 		// if no move can improve alpha, return
 		return alpha;
 	}
-
+*/
 	if(Score > alpha) {
 		alpha = Score;
 	}
@@ -474,9 +479,9 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 		}
 		/*
 		Move statistics (like ordering, transpostion table stats, and null move stats)
+		*/
 		printf("Hits:%d Overwrite:%d NewWrite:%d Cut:%d\nOrdering %.2f NullCut:%d\n",pos->HashTable->hit,pos->HashTable->overWrite,pos->HashTable->newWrite,pos->HashTable->cut,
 		(info->fhf/info->fh)*100,info->nullCut);
-		*/
 	}
 
 	if(info->GAME_MODE == UCIMODE) {

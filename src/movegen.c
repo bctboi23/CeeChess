@@ -3,7 +3,6 @@
 #include "stdio.h"
 #include "defs.h"
 
-#define MOVE(f,t,ca,pro,fl) ( (f) | ((t) << 7) | ( (ca) << 14 ) | ( (pro) << 20 ) | (fl))
 #define SQOFFBOARD(sq) (FilesBrd[(sq)]==OFFBOARD)
 
 const int LoopSlidePce[8] = {
