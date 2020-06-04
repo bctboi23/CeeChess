@@ -8,19 +8,19 @@ const int queenPhase = 4;
 const int totalPhase = minorPhase * 8 + rookPhase * 4 + queenPhase * 2;
 
 // Midgame constants
-const int BishopPairMG = 20;
-const int PawnPassedMG[8] = { 0, 5, 10, 20, 35, 50, 75, 150 };
+const int BishopPairMG = 32;
+const int PawnPassedMG[8] = { 0, 8, 16, 19, 39, 60, 62, 106 };
 
 // Endgame constants
-const int BishopPairEG = 35;
-const int PawnPassedEG[8] = { 0, 5, 15, 30, 50, 75, 125, 250 };
+const int BishopPairEG = 56;
+const int PawnPassedEG[8] = { 0, 9, 21, 29, 71, 80, 131, 254 };
 
 // Full game constants
-const int PawnIsolated = -10;
-const int QueenOpenFile = 5;
-const int QueenSemiOpenFile = 3;
-const int RookOpenFile = 10;
-const int RookSemiOpenFile = 5;
+const int PawnIsolated = -13;
+const int QueenOpenFile = 6;
+const int QueenSemiOpenFile = 5;
+const int RookOpenFile = 19;
+const int RookSemiOpenFile = 7;
 
 // Piece Square Tables (by Lyudmil)
 const int PawnMG[64] =
@@ -145,7 +145,7 @@ const int QueenEG[64] =
 
 const int KingMG[64] =
 {
-	40,  50,  30,  10,  10,  30,  50,  40,
+	70,  56,  48,  3,  3,  48,  56,  70,
 	30,  40,  20,   0,   0,  20,  40,  30,
 	10,  20,   0, -20, -20,   0,  20,  10,
 	0,  10, -10, -30, -30, -10,  10,   0,
