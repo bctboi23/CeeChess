@@ -22,14 +22,14 @@ static const int RevFutilityMargin[6] = {0, 200, 400, 600, 800, 1000};
 
 // LMR Values
 static const int LateMoveDepth = 3;
-static const int FullSearchMoves = 2;
+static const int FullSearchMoves = 4;
 int LMRTable[64][64];
 
 void InitSearch() {
 	// creating the LMR table entries (idea from Ethereal)
 	for (int moveDepth = 1; moveDepth < 64; moveDepth++)
   	for (int played = 1; played < 64; played++)
-      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 1.75);
+      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 2.50);
 }
 
 static void CheckUp(S_SEARCHINFO *info) {
