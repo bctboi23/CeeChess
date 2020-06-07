@@ -29,7 +29,7 @@ void InitSearch() {
 	// creating the LMR table entries (idea from Ethereal)
 	for (int moveDepth = 1; moveDepth < 64; moveDepth++)
   	for (int played = 1; played < 64; played++)
-      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 1.75);
+      LMRTable[moveDepth][played] = 0.75 + (log(moveDepth) * log(played) / 2.25);
 }
 
 static void CheckUp(S_SEARCHINFO *info) {
@@ -197,6 +197,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	if(depth <= 0) {
 		return Quiescence(alpha, beta, pos, info);
+		depth++;
 		// return EvalPosition(pos);
 	}
 
@@ -235,6 +236,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	if (depth <= RazorDepth && !PvMove && !InCheck && positionEval + RazorMargin[depth] <= alpha) {
 		// drop into qSearch if move most likely won't beat alpha
 		Score = Quiescence(alpha - RazorMargin[depth], beta - RazorMargin[depth], pos, info);
+		depth++;
 		if (Score + RazorMargin[depth] <= alpha) {
 			return Score;
 		}
@@ -246,7 +248,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	}
 
 	// Null Move Pruning
-	if(depth >= minDepth && DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0) && positionEval >= beta) {
+	if(depth >= 2 && DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0) && positionEval >= beta) {
 		MakeNullMove(pos);
 		Score = -AlphaBeta( -beta, -beta + 1, depth - 1 - R, pos, info, FALSE, FALSE);
 		TakeNullMove(pos);
@@ -316,7 +318,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 				if ((list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) reduce--;
 
 				// do not fall directly into quiescence search
-				reduce = MIN(depth - 1, MAX(reduce, 1));
+				reduce = MIN(depth, MAX(reduce, 1));
 
 				// print reduction depth at move number
 				// printf("reduction: %d depth: %d moveNum: %d\n", (reduce - 1), depth, Legal);
@@ -336,7 +338,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 			}
 		} else {
 			// If no PV found, do a full search
-			Score = -AlphaBeta( -beta, -alpha, depth - 1, pos, info, TRUE, FALSE);
+			Score = -AlphaBeta( -beta, -alpha, depth, pos, info, TRUE, FALSE);
 
 		}
 
@@ -425,16 +427,9 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 			printf("info score cp %d depth %d nodes %ld time %d ",
 				bestScore,currentDepth,info->nodes,GetTimeMs()-info->starttime);
 			}
-		} else if(info->GAME_MODE == XBOARDMODE && info->POST_THINKING == TRUE) {
-			printf("%d %d %d %ld ",
-				currentDepth,bestScore,(GetTimeMs()-info->starttime)/10,info->nodes);
-		} else if(info->POST_THINKING == TRUE) {
-			printf("score:%d depth:%d nodes:%ld time:%d(ms) ",
-				bestScore,currentDepth,info->nodes,GetTimeMs()-info->starttime);
-		}
-		if(info->GAME_MODE == UCIMODE || info->POST_THINKING == TRUE) {
+		} if(info->GAME_MODE == UCIMODE) {
 			pvMoves = GetPvLine(currentDepth, pos);
-			if(!info->GAME_MODE == XBOARDMODE) {
+			if(TRUE) {
 				printf("pv");
 			}
 			for(pvNum = 0; pvNum < pvMoves; ++pvNum) {
@@ -449,13 +444,6 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 
 	if(info->GAME_MODE == UCIMODE) {
 		printf("bestmove %s\n",PrMove(bestMove));
-	} else if(info->GAME_MODE == XBOARDMODE) {
-		printf("move %s\n",PrMove(bestMove));
-		MakeMove(pos, bestMove);
-	} else {
-		printf("\n\n***!! CeeChess makes move %s !!***\n\n",PrMove(bestMove));
-		MakeMove(pos, bestMove);
-		PrintBoard(pos);
 	}
 
 }

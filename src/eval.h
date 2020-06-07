@@ -5,14 +5,14 @@
 const int minorPhase = 1;
 const int rookPhase = 2;
 const int queenPhase = 4;
-const int totalPhase = minorPhase * 8 + rookPhase * 4 + queenPhase * 2;
+const int totalPhase = 24;
 
 // Midgame constants
-const int BishopPairMG = 20;
+const int BishopPairMG = 25;
 const int PawnPassedMG[8] = { 0, 5, 10, 20, 35, 50, 75, 150 };
 
 // Endgame constants
-const int BishopPairEG = 35;
+const int BishopPairEG = 40;
 const int PawnPassedEG[8] = { 0, 5, 15, 30, 50, 75, 125, 250 };
 
 // Full game constants

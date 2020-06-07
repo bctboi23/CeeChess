@@ -21,8 +21,6 @@ int main() {
 	setbuf(stdin, NULL);
     setbuf(stdout, NULL);
 
-	printf("Welcome to CeeChess! Type 'CeeChess' for console mode...\n");
-
 	char line[256];
 	while (TRUE) {
 		memset(&line[0], 0, sizeof(line));
@@ -34,14 +32,6 @@ int main() {
 			continue;
 		if (!strncmp(line, "uci",3)) {
 			Uci_Loop(pos, info);
-			if(info->quit == TRUE) break;
-			continue;
-		} else if (!strncmp(line, "xboard",6))	{
-			XBoard_Loop(pos, info);
-			if(info->quit == TRUE) break;
-			continue;
-		} else if (!strncmp(line, "CeeChess",8))	{
-			Console_Loop(pos, info);
 			if(info->quit == TRUE) break;
 			continue;
 		} else if(!strncmp(line, "quit",4))	{

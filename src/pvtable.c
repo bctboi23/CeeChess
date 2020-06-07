@@ -57,11 +57,9 @@ void InitHashTable(S_HASHTABLE *table, const int MB) {
 		
     table->pTable = (S_HASHENTRY *) malloc(table->numEntries * sizeof(S_HASHENTRY));
 	if(table->pTable == NULL) {
-		printf("Hash Allocation Failed, trying %dMB...\n",MB/2);
 		InitHashTable(table,MB/2);
 	} else {
 		ClearHashTable(table);
-		printf("HashTable init complete with %d entries\n",table->numEntries);
 	}
 	
 }
