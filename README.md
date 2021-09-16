@@ -1,5 +1,5 @@
 # CeeChess
-Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! If you want to try your hand at facing me, I am on lichess at https://lichess.org/@/seeChessBot!
+Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! If you want to try your hand at facing me, I am occasionally on lichess at https://lichess.org/@/seeChessBot, or permanently hosted within a web app socket at https://ceechess.herokuapp.com!
 
 **Rating:**
 The rating for the latest release of the engine (v1.3.2) should be around ~2330 CCRL, which compares to around 2500 FIDE classical rating.
