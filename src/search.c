@@ -27,9 +27,10 @@ int LMRTable[64][64];
 
 void InitSearch() {
 	// creating the LMR table entries (idea from Ethereal)
+	// updated the value from 1.75 to 2.25
 	for (int moveDepth = 1; moveDepth < 64; moveDepth++)
   	for (int played = 1; played < 64; played++)
-      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 1.75);
+      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 2.25);
 }
 
 static void CheckUp(S_SEARCHINFO *info) {
