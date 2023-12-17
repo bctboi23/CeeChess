@@ -30,6 +30,10 @@ U64 BlackPassedMask[64];
 U64 WhitePassedMask[64];
 U64 IsolatedMask[64];
 
+U64 BlackConnectedMask[64];
+U64 WhiteConnectedMask[64];
+
+
 void InitEvalMasks() {
 
 	int sq, tsq, r, f;
@@ -51,6 +55,8 @@ void InitEvalMasks() {
 		IsolatedMask[sq] = 0ULL;
 		WhitePassedMask[sq] = 0ULL;
 		BlackPassedMask[sq] = 0ULL;
+		WhiteConnectedMask[sq] = 0ULL;
+		BlackConnectedMask[sq] = 0ULL;
     }
 
 	for(sq = 0; sq < 64; ++sq) {
@@ -71,12 +77,14 @@ void InitEvalMasks() {
             IsolatedMask[sq] |= FileBBMask[FilesBrd[SQ120(sq)] - 1];
 
             tsq = sq + 7;
+			WhiteConnectedMask[sq] |= (1ULL << tsq);
             while(tsq < 64) {
                 WhitePassedMask[sq] |= (1ULL << tsq);
                 tsq += 8;
             }
 
             tsq = sq - 9;
+			BlackConnectedMask[sq] |= (1ULL << tsq);
             while(tsq >= 0) {
                 BlackPassedMask[sq] |= (1ULL << tsq);
                 tsq -= 8;
@@ -87,12 +95,14 @@ void InitEvalMasks() {
             IsolatedMask[sq] |= FileBBMask[FilesBrd[SQ120(sq)] + 1];
 
             tsq = sq + 9;
+			WhiteConnectedMask[sq] |= (1ULL << tsq);
             while(tsq < 64) {
                 WhitePassedMask[sq] |= (1ULL << tsq);
                 tsq += 8;
             }
 
             tsq = sq - 7;
+			BlackConnectedMask[sq] |= (1ULL << tsq);
             while(tsq >= 0) {
                 BlackPassedMask[sq] |= (1ULL << tsq);
                 tsq -= 8;
@@ -185,5 +195,6 @@ void AllInit() {
 	InitFilesRanksBrd();
 	InitEvalMasks();
 	InitMvvLva();
+	InitEval();
 	InitSearch();
 }

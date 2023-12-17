@@ -81,7 +81,7 @@ void PrintOptions() {
 	printf("feature done=1\n");
 }
 
-void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
+void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 
 	info->GAME_MODE = XBOARDMODE;
 	info->POST_THINKING = TRUE;
@@ -125,7 +125,7 @@ void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 
 			printf("time:%d start:%d stop:%d depth:%d timeset:%d movestogo:%d mps:%d\n",
 				time,info->starttime,info->stoptime,info->depth,info->timeset, movestogo[pos->side], mps);
-				SearchPosition(pos, info);
+				SearchPosition(pos, info, table);
 
 			if(mps != 0) {
 				movestogo[pos->side^1]--;
@@ -186,7 +186,7 @@ void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 		    if(MB < 4) MB = 4;
 			if(MB > MAX_HASH) MB = MAX_HASH;
 			printf("Set Hash to %d MB\n",MB);
-			InitHashTable(pos->HashTable, MB);
+			InitHashTable(table, MB);
 			continue;
 		}
 
@@ -216,7 +216,7 @@ void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 		}
 
 		if(!strcmp(command, "new")) {
-			ClearHashTable(pos->HashTable);
+			ClearHashTable(table);
 			engineSide = BLACK;
 			ParseFen(START_FEN, pos);
 			depth = -1;
@@ -246,7 +246,7 @@ void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 }
 
 
-void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
+void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 
 	printf("Welcome to seeChess In Console Mode!\n");
 	printf("Type help for commands\n\n");
@@ -277,10 +277,10 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 				info->stoptime = info->starttime + movetime;
 			}
 
-			SearchPosition(pos, info);
+			SearchPosition(pos, info, table);
 		}
 
-		printf("\nseeChess > ");
+		printf("\nCeeChess > ");
 
 		fflush(stdout);
 
@@ -304,6 +304,8 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 			printf("time x - set thinking time to x seconds (depth still applies if set)\n");
 			printf("view - show current depth and movetime settings\n");
 			printf("setboard x - set position to fen x\n");
+			printf("perft x - do perft to depth x on current position\n");
+			printf("tune <input_file> <output_file> <log_file> <use_tanh> - tune parameters on an input file, showing final output in output file and all iterations in log file\n");
 			printf("** note ** - to reset time and depth, set to 0\n");
 			printf("enter moves using b7b8q notation\n\n\n");
 			continue;
@@ -316,6 +318,7 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 		}
 
 		if(!strcmp(command, "eval")) {
+			engineSide = BOTH;
 			PrintBoard(pos);
 			printf("Eval:%d",EvalPosition(pos));
 			MirrorBoard(pos);
@@ -327,6 +330,22 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 		if(!strcmp(command, "setboard")){
 			engineSide = BOTH;
 			ParseFen(inBuf+9, pos);
+			continue;
+		}
+
+		if (!strcmp(command, "perft")) {
+			sscanf(inBuf, "perft %d", &depth);
+			PerftTest(depth, pos);
+			continue;
+		}
+
+		if (!strcmp(command, "tune")) {
+			char fileIn[256];
+			char fileOut[256];
+			char fileLog[256];
+			int use_tanh = 0;
+			sscanf(inBuf, "tune %s %s %s %d", fileIn, fileOut, fileLog, &use_tanh);
+			TuneEval(pos, fileIn, fileOut, fileLog, use_tanh);
 			continue;
 		}
 
@@ -378,7 +397,7 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info) {
 		}
 
 		if(!strcmp(command, "new")) {
-			ClearHashTable(pos->HashTable);
+			ClearHashTable(table);
 			engineSide = BLACK;
 			ParseFen(START_FEN, pos);
 			continue;

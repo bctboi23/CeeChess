@@ -55,8 +55,9 @@ void PerftTest(int depth, S_BOARD *pos) {
         long oldnodes = leafNodes - cumnodes;
         printf("move %d : %s : %ld\n",MoveNum+1,PrMove(move),oldnodes);
     }
-	
-	printf("\nTest Complete : %ld nodes visited in %dms\n",leafNodes,GetTimeMs() - start);
+	int totalTime = GetTimeMs() - start;
+    double knps = leafNodes / totalTime;
+	printf("\nTest Complete : %ld nodes visited in %dms (%gknps)\n",leafNodes, totalTime, knps);
 
     return;
 }

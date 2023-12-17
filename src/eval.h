@@ -1,6 +1,8 @@
 #ifndef EVAL_H
 #define EVAL_H
 
+// OLD EVALUATION CONSTANTS >> eval-tuned.h is new constants
+
 // Game phase constants
 const int minorPhase = 1;
 const int rookPhase = 2;
@@ -10,17 +12,61 @@ const int totalPhase = minorPhase * 8 + rookPhase * 4 + queenPhase * 2;
 // Midgame constants
 const int BishopPairMG = 20;
 const int PawnPassedMG[8] = { 0, 5, 10, 20, 35, 50, 75, 150 };
+const int PawnPassedConnectedMG[8] = { 0, 0, 5, 10, 20, 35, 50, 75};
+const int PawnConnectedMG = 15;
+const int PawnIsolatedMG = -10;
+const int RookOpenFile = 10;
+const int RookSemiOpenFile = 5;
+const int QueenOpenFile = 5;
+const int QueenSemiOpenFile = 3;
+const int mobilityFactorMG = 5;
+const int tempoMG = 3;
 
 // Endgame constants
 const int BishopPairEG = 35;
 const int PawnPassedEG[8] = { 0, 5, 15, 30, 50, 75, 125, 250 };
+const int PawnPassedConnectedEG[8] = { 0, 0, 5, 15, 30, 50, 75, 125};
+const int PawnConnectedEG = 50;
+const int PawnIsolatedEG = -20;
+const int mobilityFactorEG = 2;
+const int tempoEG = 2;
 
-// Full game constants
-const int PawnIsolated = -10;
-const int QueenOpenFile = 5;
-const int QueenSemiOpenFile = 3;
-const int RookOpenFile = 10;
-const int RookSemiOpenFile = 5;
+const int RookOpenFileMG = RookOpenFile;
+const int RookOpenFileEG = RookOpenFile;
+
+const int QueenOpenFileMG = QueenOpenFile;
+const int QueenOpenFileEG = QueenOpenFile;
+
+const int RookSemiOpenFileMG = RookSemiOpenFile;
+const int RookSemiOpenFileEG = RookSemiOpenFile;
+
+const int QueenSemiOpenFileMG = QueenSemiOpenFile;
+const int QueenSemiOpenFileEG = QueenSemiOpenFile;
+
+
+const int diag_nw[64] = {
+   0, 1, 2, 3, 4, 5, 6, 7,
+   1, 2, 3, 4, 5, 6, 7, 8,
+   2, 3, 4, 5, 6, 7, 8, 9,
+   3, 4, 5, 6, 7, 8, 9,10,
+   4, 5, 6, 7, 8, 9,10,11,
+   5, 6, 7, 8, 9,10,11,12,
+   6, 7, 8, 9,10,11,12,13,
+   7, 8, 9,10,11,12,13,14
+};
+
+const int diag_ne[64] = {
+   7, 6, 5, 4, 3, 2, 1, 0,
+   8, 7, 6, 5, 4, 3, 2, 1,
+   9, 8, 7, 6, 5, 4, 3, 2,
+  10, 9, 8, 7, 6, 5, 4, 3,
+  11,10, 9, 8, 7, 6, 5, 4,
+  12,11,10, 9, 8, 7, 6, 5,
+  13,12,11,10, 9, 8, 7, 6,
+  14,13,12,11,10, 9, 8, 7
+};
+
+int bonus_dia_distance[15] = {5, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 // Piece Square Tables (by Lyudmil)
 const int PawnMG[64] =

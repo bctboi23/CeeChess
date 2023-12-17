@@ -28,7 +28,7 @@ int CheckBoard(const S_BOARD *pos) {
 	int t_bigPce[2] = { 0, 0};
 	int t_majPce[2] = { 0, 0};
 	int t_minPce[2] = { 0, 0};
-	int t_material[2] = { 0, 0};
+	int t_material[4] = { 0, 0, 0, 0};
 
 	int sq64,t_piece,t_pce_num,sq120,colour,pcount;
 
@@ -56,7 +56,8 @@ int CheckBoard(const S_BOARD *pos) {
 		if( PieceMin[t_piece] == TRUE) t_minPce[colour]++;
 		if( PieceMaj[t_piece] == TRUE) t_majPce[colour]++;
 
-		t_material[colour] += PieceVal[t_piece];
+		t_material[colour] += PieceValMG[t_piece];
+		t_material[colour + 2] += PieceValEG[t_piece];
 	}
 
 	for(t_piece = wP; t_piece <= bK; ++t_piece) {
@@ -88,6 +89,7 @@ int CheckBoard(const S_BOARD *pos) {
 	}
 
 	ASSERT(t_material[WHITE]==pos->material[WHITE] && t_material[BLACK]==pos->material[BLACK]);
+	ASSERT(t_material[WHITE + 2]==pos->material[WHITE + 2] && t_material[BLACK + 2]==pos->material[BLACK + 2]);
 	ASSERT(t_minPce[WHITE]==pos->minPce[WHITE] && t_minPce[BLACK]==pos->minPce[BLACK]);
 	ASSERT(t_majPce[WHITE]==pos->majPce[WHITE] && t_majPce[BLACK]==pos->majPce[BLACK]);
 	ASSERT(t_bigPce[WHITE]==pos->bigPce[WHITE] && t_bigPce[BLACK]==pos->bigPce[BLACK]);
@@ -124,7 +126,8 @@ void UpdateListsMaterial(S_BOARD *pos) {
 		    if( PieceMin[piece] == TRUE) pos->minPce[colour]++;
 		    if( PieceMaj[piece] == TRUE) pos->majPce[colour]++;
 
-			pos->material[colour] += PieceVal[piece];
+			pos->material[colour] += PieceValMG[piece];
+			pos->material[colour + 2] += PieceValEG[piece];
 
 			ASSERT(pos->pceNum[piece] < 10 && pos->pceNum[piece] >= 0);
 
@@ -267,11 +270,14 @@ void ResetBoard(S_BOARD *pos) {
 		pos->bigPce[index] = 0;
 		pos->majPce[index] = 0;
 		pos->minPce[index] = 0;
-		pos->material[index] = 0;
 	}
 
 	for(index = 0; index < 3; ++index) {
 		pos->pawns[index] = 0ULL;
+	}
+
+	for(index = 0; index < 4; ++index) {
+		pos->material[index] = 0;
 	}
 
 	for(index = 0; index < 13; ++index) {

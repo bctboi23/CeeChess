@@ -14,8 +14,14 @@ const int LoopNonSlidePce[6] = {
  wN, wK, 0, bN, bK, 0
 };
 
+const int LoopNonSlidePceMob[4] = {
+ wN, 0, bN, 0
+};
+
+
 const int LoopSlideIndex[2] = { 0, 4 };
 const int LoopNonSlideIndex[2] = { 0, 3 };
+const int LoopNonSlideIndexMob[2] = { 0, 2 };
 
 const int PceDir[13][8] = {
 	{ 0, 0, 0, 0, 0, 0, 0 },
@@ -85,11 +91,15 @@ static void AddQuietMove( const S_BOARD *pos, int move, S_MOVELIST *list ) {
 
 	list->moves[list->count].move = move;
 
-  if(pos->searchKillers[0][pos->ply] == move) {
+  	if(pos->searchKillers[0][pos->ply] == move) {
 		list->moves[list->count].score = 900000;
-	} else if(pos->searchKillers[1][pos->ply] == move) {
+	} else if (pos->searchKillers[1][pos->ply] == move) {
 		list->moves[list->count].score = 800000;
-	} else {
+	} else if (pos->searchKillers[0][pos->ply - 2] == move) {
+		list->moves[list->count].score = 700000;
+	} else if (pos->searchKillers[1][pos->ply - 2] == move) {
+		list->moves[list->count].score = 600000;
+	}  else {
 		list->moves[list->count].score = pos->searchHistory[pos->pieces[FROMSQ(move)]][TOSQ(move)];
 	}
 	list->count++;
@@ -484,4 +494,179 @@ void GenerateAllCaps(const S_BOARD *pos, S_MOVELIST *list) {
 		pce = LoopNonSlidePce[pceIndex++];
 	}
     ASSERT(MoveListOk(list,pos));
+}
+
+inline int GetMobility(const S_BOARD *pos, int side) {
+
+	ASSERT(CheckBoard(pos));
+
+	int pce = EMPTY;
+	int sq = 0; int t_sq = 0;
+	int pceNum = 0;
+	int dir = 0;
+	int index = 0;
+	int pceIndex = 0;
+	int count = 0;
+
+	if(side == WHITE) {
+		// don't count pawns in mobility
+		for(pceNum = 0; pceNum < pos->pceNum[wP]; ++pceNum) {
+			sq = pos->pList[wP][pceNum];
+			ASSERT(SqOnBoard(sq));
+
+			if(pos->pieces[sq + 10] == EMPTY) {
+				count++;
+				if(RanksBrd[sq] == RANK_2 && pos->pieces[sq + 20] == EMPTY) {
+					count++;
+				}
+			}
+
+			if(!SQOFFBOARD(sq + 9) && PieceCol[pos->pieces[sq + 9]] == BLACK) {
+				count++;
+			}
+			if(!SQOFFBOARD(sq + 11) && PieceCol[pos->pieces[sq + 11]] == BLACK) {
+				count++;
+			}
+
+			if(pos->enPas != NO_SQ) {
+				if(sq + 9 == pos->enPas) {
+					count++;
+				}
+				if(sq + 11 == pos->enPas) {
+					count++;
+				}
+			}
+		}
+
+		// not using king moves in mobility
+		/*
+		if(pos->castlePerm & WKCA) {
+			if(pos->pieces[F1] == EMPTY && pos->pieces[G1] == EMPTY) {
+				if(!SqAttacked(E1,BLACK,pos) && !SqAttacked(F1,BLACK,pos) ) {
+					count++;
+				}
+			}
+		}
+
+		if(pos->castlePerm & WQCA) {
+			if(pos->pieces[D1] == EMPTY && pos->pieces[C1] == EMPTY && pos->pieces[B1] == EMPTY) {
+				if(!SqAttacked(E1,BLACK,pos) && !SqAttacked(D1,BLACK,pos) ) {
+					count++;
+				}
+			}
+		}
+		*/
+
+	} else {
+		for(pceNum = 0; pceNum < pos->pceNum[bP]; ++pceNum) {
+			sq = pos->pList[bP][pceNum];
+			ASSERT(SqOnBoard(sq));
+
+			if(pos->pieces[sq - 10] == EMPTY) {
+				count++;
+				if(RanksBrd[sq] == RANK_7 && pos->pieces[sq - 20] == EMPTY) {
+					count++;
+				}
+			}
+
+			if(!SQOFFBOARD(sq - 9) && PieceCol[pos->pieces[sq - 9]] == WHITE) {
+				count++;
+			}
+
+			if(!SQOFFBOARD(sq - 11) && PieceCol[pos->pieces[sq - 11]] == WHITE) {
+				count++;
+			}
+			if(pos->enPas != NO_SQ) {
+				if(sq - 9 == pos->enPas) {
+					count++;
+				}
+				if(sq - 11 == pos->enPas) {
+					count++;
+				}
+			}
+		}
+
+		// not using king moves in mobility
+		/*
+		if(pos->castlePerm &  BKCA) {
+			if(pos->pieces[F8] == EMPTY && pos->pieces[G8] == EMPTY) {
+				if(!SqAttacked(E8,WHITE,pos) && !SqAttacked(F8,WHITE,pos) ) {
+					count++;
+				}
+			}
+		}
+
+		if(pos->castlePerm &  BQCA) {
+			if(pos->pieces[D8] == EMPTY && pos->pieces[C8] == EMPTY && pos->pieces[B8] == EMPTY) {
+				if(!SqAttacked(E8,WHITE,pos) && !SqAttacked(D8,WHITE,pos) ) {
+					count++;
+				}
+			}
+		}
+		*/
+	}
+
+	/* Loop for slide pieces */
+	pceIndex = LoopSlideIndex[side];
+	pce = LoopSlidePce[pceIndex++];
+	while( pce != 0) {
+		ASSERT(PieceValid(pce));
+
+		for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
+			sq = pos->pList[pce][pceNum];
+			ASSERT(SqOnBoard(sq));
+
+			for(index = 0; index < NumDir[pce]; ++index) {
+				dir = PceDir[pce][index];
+				t_sq = sq + dir;
+
+				while(!SQOFFBOARD(t_sq)) {
+					// BLACK ^ 1 == WHITE       WHITE ^ 1 == BLACK
+					if(pos->pieces[t_sq] != EMPTY) {
+						count += (PieceCol[pos->pieces[t_sq]] == (side ^ 1));
+						break;
+					}
+					count++;
+					t_sq += dir;
+				}
+			}
+		}
+
+		pce = LoopSlidePce[pceIndex++];
+	}
+
+	/* Loop for non slide */
+	// not using king moves in mobility
+	pceIndex = LoopNonSlideIndexMob[side];
+	pce = LoopNonSlidePceMob[pceIndex++];
+
+	while( pce != 0) {
+		ASSERT(PieceValid(pce));
+
+		for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
+			sq = pos->pList[pce][pceNum];
+			ASSERT(SqOnBoard(sq));
+
+			for(index = 0; index < NumDir[pce]; ++index) {
+				dir = PceDir[pce][index];
+				t_sq = sq + dir;
+
+				if(SQOFFBOARD(t_sq)) {
+					continue;
+				}
+
+				// BLACK ^ 1 == WHITE       WHITE ^ 1 == BLACK
+				if(pos->pieces[t_sq] != EMPTY) {
+					count += (PieceCol[pos->pieces[t_sq]] == (side ^ 1));
+					continue;
+				}
+				count++;
+			}
+		}
+
+		pce = LoopNonSlidePce[pceIndex++];
+	}
+
+    //ASSERT(MoveListOk(list,pos));
+	return count;
 }

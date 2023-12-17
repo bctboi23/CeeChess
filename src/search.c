@@ -28,8 +28,8 @@ int LMRTable[64][64];
 void InitSearch() {
 	// creating the LMR table entries (idea from Ethereal)
 	for (int moveDepth = 1; moveDepth < 64; moveDepth++)
-  	for (int played = 1; played < 64; played++)
-      LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 1.75);
+  		for (int played = 1; played < 64; played++)
+      		LMRTable[moveDepth][played] = 1 + (log(moveDepth) * log(played) / 1.75);
 }
 
 static void CheckUp(S_SEARCHINFO *info) {
@@ -77,7 +77,7 @@ static int IsRepetition(const S_BOARD *pos) {
 	return FALSE;
 }
 
-static void ClearForSearch(S_BOARD *pos, S_SEARCHINFO *info) {
+static void ClearForSearch(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 
 	int index = 0;
 	int index2 = 0;
@@ -94,10 +94,11 @@ static void ClearForSearch(S_BOARD *pos, S_SEARCHINFO *info) {
 		}
 	}
 
-	pos->HashTable->overWrite=0;
-	pos->HashTable->hit=0;
-	pos->HashTable->cut=0;
+	table->overWrite=0;
+	table->hit=0;
+	table->cut=0;
 	pos->ply = 0;
+	table->currentage++;
 
 	info->stopped = 0;
 	info->nodes = 0;
@@ -137,7 +138,6 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 	if(Score >= beta) {
 		return beta;
 	}
-
 	if(Score > alpha) {
 		alpha = Score;
 	}
@@ -182,7 +182,7 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 	return alpha;
 }
 
-static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO *info, int DoNull, int DoLMR) {
+static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO *info, int DoNull, int DoLMR, S_HASHTABLE *table) {
 
 	ASSERT(CheckBoard(pos));
 	ASSERT(beta>alpha);
@@ -224,8 +224,8 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	int Score = -INFINITE;
 	int PvMove = NOMOVE;
 
-	if( ProbeHashEntry(pos, &PvMove, &Score, alpha, beta, depth) == TRUE ) {
-		pos->HashTable->cut++;
+	if( ProbeHashEntry(pos, table, &PvMove, &Score, alpha, beta, depth) == TRUE ) {
+		table->cut++;
 		return Score;
 	}
 
@@ -234,9 +234,9 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	// Razoring (prunes near alpha)
 	if (depth <= RazorDepth && !PvMove && !InCheck && positionEval + RazorMargin[depth] <= alpha) {
 		// drop into qSearch if move most likely won't beat alpha
-		Score = Quiescence(alpha - RazorMargin[depth], beta - RazorMargin[depth], pos, info);
+		Score = Quiescence(alpha - RazorMargin[depth], beta + RazorMargin[depth], pos, info);
 		if (Score + RazorMargin[depth] <= alpha) {
-			return Score;
+			return Score + RazorMargin[depth];
 		}
 	}
 
@@ -248,7 +248,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	// Null Move Pruning
 	if(depth >= minDepth && DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0) && positionEval >= beta) {
 		MakeNullMove(pos);
-		Score = -AlphaBeta( -beta, -beta + 1, depth - 1 - R, pos, info, FALSE, FALSE);
+		Score = -AlphaBeta( -beta, -beta + 1, depth - 1 - R, pos, info, FALSE, FALSE, table);
 		TakeNullMove(pos);
 		if(info->stopped == TRUE) {
 			return 0;
@@ -261,9 +261,9 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	}
 
 	S_MOVELIST list[1];
-  GenerateAllMoves(pos,list);
+  	GenerateAllMoves(pos,list);
 
-  int MoveNum = 0;
+  	int MoveNum = 0;
 	int Legal = 0;
 	int OldAlpha = alpha;
 	int BestMove = NOMOVE;
@@ -291,15 +291,18 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 		PickNextMove(MoveNum, list);
 
-		// Futility Pruning (if node is considered futile, and at least 1 legal move has been searched, don't search any more quiet moves in the position)
-		if (Legal && FutileNode && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos)) {
+		// if move is legal, play it
+		if ( !MakeMove(pos,list->moves[MoveNum].move))  {
 			continue;
 		}
 
-		// if move is legal, play it
-    if ( !MakeMove(pos,list->moves[MoveNum].move))  {
-        continue;
-    }
+		// Futility Pruning (if node is considered futile, and at least 1 legal move has been searched, don't search any more quiet moves in the position)
+		int isMoveCheck = SqAttacked(pos->KingSq[pos->side^1],pos->side,pos);
+		int isQuiet = (!(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !isMoveCheck);
+		if (Legal && FutileNode && isQuiet) {
+			TakeMove(pos);
+			continue;
+		}
 
 		Legal++;
 
@@ -307,13 +310,15 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		if (FoundPv == TRUE) {
 
 			// Late Move Reductions at Root (reduces moves if past full move search limit (not reducing captures, checks, or promotions))
-			if (depth >= LateMoveDepth && !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !SqAttacked(pos->KingSq[pos->side],pos->side^1,pos) && DoLMR && Legal > FullSearchMoves) {
+			if (depth >= LateMoveDepth && Legal > FullSearchMoves && isQuiet && DoLMR) {
 
 				// get initial reduction depth
 				int reduce = LMRTable[MIN(depth, 63)][MIN(Legal, 63)];
 
 				// reduce less for killer moves
-				if ((list->moves[MoveNum].score == 800000 || list->moves[MoveNum].score == 900000)) reduce--;
+				if ((list->moves[MoveNum].move == pos->searchKillers[0][pos->ply]) || 
+					(list->moves[MoveNum].move == pos->searchKillers[1][pos->ply])
+				) reduce--;
 
 				// do not fall directly into quiescence search
 				reduce = MIN(depth - 1, MAX(reduce, 1));
@@ -322,25 +327,27 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 				// printf("reduction: %d depth: %d moveNum: %d\n", (reduce - 1), depth, Legal);
 
 				// search with the reduced depth
-				Score = -AlphaBeta( -alpha - 1, -alpha, depth - reduce, pos, info, TRUE, FALSE);
+				Score = -AlphaBeta( -alpha - 1, -alpha, depth - reduce, pos, info, TRUE, FALSE, table);
 
 			} else {
 				// If LMR conditions not met (not at root, or tactical move), do a null window search (because we are using PVS)
-				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, TRUE);
+				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, TRUE, table);
 
 			}
 			if (Score > alpha && Score < beta) {
 				// If the LMR or the null window fails, do a full search
-				Score = -AlphaBeta( -beta, -alpha, depth - 1, pos, info, TRUE, FALSE);
+				Score = -AlphaBeta( -beta, -alpha, depth - 1, pos, info, TRUE, FALSE, table);
 
 			}
 		} else {
 			// If no PV found, do a full search
-			Score = -AlphaBeta( -beta, -alpha, depth - 1, pos, info, TRUE, FALSE);
+			Score = -AlphaBeta( -beta, -alpha, depth - 1, pos, info, TRUE, FALSE, table);
 
 		}
 
 		TakeMove(pos);
+
+		int nonCapture = !(list->moves[MoveNum].move & MFLAGCAP);
 
 		if(info->stopped == TRUE) {
 			return 0;
@@ -348,52 +355,46 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		if(Score > BestScore) {
 			BestScore = Score;
 			BestMove = list->moves[MoveNum].move;
-			if(Score > alpha) {
-				if(Score >= beta) {
-					if(Legal==1) {
-						info->fhf++;
-					}
-					info->fh++;
-
-					if(!(list->moves[MoveNum].move & MFLAGCAP)) {
+		}
+		if(Score > alpha) {
+			if(Score >= beta) {
+				if(Legal==1) {
+					info->fhf++;
+				}
+				info->fh++;
+				if (nonCapture) {
+					if ((pos->searchKillers[0][pos->ply] != list->moves[MoveNum].move)) {
 						pos->searchKillers[1][pos->ply] = pos->searchKillers[0][pos->ply];
 						pos->searchKillers[0][pos->ply] = list->moves[MoveNum].move;
 					}
-
-					StoreHashEntry(pos, BestMove, beta, HFBETA, depth);
-
-					return beta;
 				}
-				FoundPv = TRUE;
-				alpha = Score;
-
-				if(!(list->moves[MoveNum].move & MFLAGCAP)) {
-					pos->searchHistory[pos->pieces[FROMSQ(BestMove)]][TOSQ(BestMove)] += depth;
-				}
+				StoreHashEntry(pos, table, BestMove, beta, HFBETA, depth);
+				return beta;
+			}
+			FoundPv = TRUE;
+			alpha = Score;
+			if (nonCapture) {
+				pos->searchHistory[pos->pieces[FROMSQ(BestMove)]][TOSQ(BestMove)] += depth;
 			}
 		}
     }
 
 	if(Legal == 0) {
-		if(InCheck) {
-			return -INFINITE + pos->ply;
-		} else {
-			return 0;
-		}
+		return InCheck * (-INFINITE + pos->ply);
 	}
 
 	ASSERT(alpha>=OldAlpha);
 
 	if(alpha != OldAlpha) {
-		StoreHashEntry(pos, BestMove, BestScore, HFEXACT, depth);
+		StoreHashEntry(pos, table, BestMove, BestScore, HFEXACT, depth);
 	} else {
-		StoreHashEntry(pos, BestMove, alpha, HFALPHA, depth);
+		StoreHashEntry(pos, table, BestMove, alpha, HFALPHA, depth);
 	}
 
 	return alpha;
 }
 
-void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
+void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 
 	int bestMove = NOMOVE;
 	int bestScore = -INFINITE;
@@ -401,20 +402,20 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 	int pvMoves = 0;
 	int pvNum = 0;
 
-	ClearForSearch(pos,info);
+	ClearForSearch(pos, info, table);
 
 	//printf("Search depth:%d\n",info->depth);
 
 	// iterative deepening
 	for( currentDepth = 1; currentDepth <= info->depth; ++currentDepth ) {
 							// alpha	 beta
-		bestScore = AlphaBeta(-INFINITE, INFINITE, currentDepth, pos, info, TRUE, TRUE);
+		bestScore = AlphaBeta(-INFINITE, INFINITE, currentDepth, pos, info, TRUE, TRUE, table);
 
 		if(info->stopped == TRUE) {
 			break;
 		}
 
-		pvMoves = GetPvLine(currentDepth, pos);
+		pvMoves = GetPvLine(currentDepth, pos, table);
 		bestMove = pos->PvArray[0];
 		if(info->GAME_MODE == UCIMODE) {
 			if (abs(bestScore) > ISMATE) {
@@ -433,7 +434,6 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 				bestScore,currentDepth,info->nodes,GetTimeMs()-info->starttime);
 		}
 		if(info->GAME_MODE == UCIMODE || info->POST_THINKING == TRUE) {
-			pvMoves = GetPvLine(currentDepth, pos);
 			if(!info->GAME_MODE == XBOARDMODE) {
 				printf("pv");
 			}
@@ -443,7 +443,7 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info) {
 			printf("\n");
 		}
 
-		//printf("Hits:%d Overwrite:%d NewWrite:%d Cut:%d\nOrdering %.2f NullCut:%d",pos->HashTable->hit,pos->HashTable->overWrite,pos->HashTable->newWrite,pos->HashTable->cut,
+		//printf("Hits:%d Overwrite:%d NewWrite:%d Cut:%d\nOrdering %.2f NullCut:%d",table->hit,table->overWrite,table->newWrite,table->cut,
 		//(info->fhf/info->fh)*100,info->nullCut);
 	}
 
