@@ -2,7 +2,17 @@
 
 #include "stdio.h"
 #include "defs.h"
-#include "eval.h"
+#include "eval-tuned.h"
+
+int DistTable[64][64];
+
+void InitEval() {
+	for (int i = 0; i < 64; ++i) {
+		for (int j = 0; j < 64; ++j) {
+			DistTable[i][j] = 14 - ( abs ( COL(i) - COL(j) ) + abs ( ROW(i) - ROW(j) ) );
+      	}
+   	}
+}
 
 static int MaterialDraw(const S_BOARD *pos) {
 
@@ -28,7 +38,7 @@ static int MaterialDraw(const S_BOARD *pos) {
   return FALSE;
 }
 
-int EvalPosition(S_BOARD *pos) {
+inline int EvalPosition(S_BOARD *pos) {
 
 	ASSERT(CheckBoard(pos));
 
@@ -41,9 +51,9 @@ int EvalPosition(S_BOARD *pos) {
 	int pceNum;
 	int sq;
 	int phase = totalPhase;
-	int scoreMG, scoreEG;
-	scoreMG = scoreEG = pos->material[WHITE] - pos->material[BLACK];
-	int score;
+	//int mobility = GetMobility(pos, WHITE) - GetMobility(pos, BLACK);
+	int scoreMG = (pos->material[WHITE] - pos->material[BLACK]); //+ (mobilityFactorMG * mobility);
+	int scoreEG = (pos->material[WHITE + 2] - pos->material[BLACK + 2]); //+ (mobilityFactorEG * mobility);
 
 	pce = wP;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
@@ -52,26 +62,43 @@ int EvalPosition(S_BOARD *pos) {
 		ASSERT(SqOnBoard(sq));
 		ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
 
+		int passed = 0;
+		int connected = 0;
+
 		scoreMG += PawnMG[SQ64(sq)];
 		scoreEG += PawnEG[SQ64(sq)];
 
 		if( (IsolatedMask[SQ64(sq)] & pos->pawns[WHITE]) == 0) {
 			//printf("wP Iso:%s\n",PrSq(sq));
-			scoreMG += PawnIsolated;
-			scoreEG += PawnIsolated;
+			scoreMG += PawnIsolatedMG;
+			scoreEG += PawnIsolatedEG;
 		}
 
 		if( (WhitePassedMask[SQ64(sq)] & pos->pawns[BLACK]) == 0) {
 			//printf("wP Passed:%s\n",PrSq(sq));
+			passed = 1;
 			scoreMG += PawnPassedMG[RanksBrd[sq]];
 			scoreEG += PawnPassedEG[RanksBrd[sq]];
 		}
 
+		if ((WhiteConnectedMask[SQ64(sq)] & pos->pawns[WHITE]) != 0) {
+			connected = 1;
+			scoreMG += PawnConnectedMG;
+			scoreEG += PawnConnectedEG;
+		}
+
+		if (passed && connected) {
+			scoreMG += PawnPassedConnectedMG[RanksBrd[sq]];
+			scoreEG += PawnPassedConnectedEG[RanksBrd[sq]];
+		}
 	}
 
 	pce = bP;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
+
+		int passed = 0;
+		int connected = 0;
 
 		ASSERT(SqOnBoard(sq));
 		ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
@@ -81,14 +108,26 @@ int EvalPosition(S_BOARD *pos) {
 
 		if( (IsolatedMask[SQ64(sq)] & pos->pawns[BLACK]) == 0) {
 			//printf("bP Iso:%s\n",PrSq(sq));
-			scoreMG -= PawnIsolated;
-			scoreEG -= PawnIsolated;
+			scoreMG -= PawnIsolatedMG;
+			scoreEG -= PawnIsolatedEG;
 		}
 
 		if( (BlackPassedMask[SQ64(sq)] & pos->pawns[WHITE]) == 0) {
 			//printf("bP Passed:%s\n",PrSq(sq));
+			passed = 1;
 			scoreMG -= PawnPassedMG[7 - RanksBrd[sq]];
 			scoreEG -= PawnPassedEG[7 - RanksBrd[sq]];
+		}
+
+		if ((BlackConnectedMask[SQ64(sq)] & pos->pawns[BLACK]) != 0) {
+			connected = 1;
+			scoreMG -= PawnConnectedMG;
+			scoreEG -= PawnConnectedEG;
+		}
+
+		if (passed && connected) {
+			scoreMG -= PawnPassedConnectedMG[7 - RanksBrd[sq]];
+			scoreEG -= PawnPassedConnectedEG[7 - RanksBrd[sq]];
 		}
 	}
 
@@ -152,11 +191,9 @@ int EvalPosition(S_BOARD *pos) {
 		scoreEG += RookEG[SQ64(sq)];
 
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
-			scoreMG += RookOpenFile;
-			scoreEG += RookOpenFile;
+			scoreMG += RookOpenFileMG;
 		} else if(!(pos->pawns[WHITE] & FileBBMask[FilesBrd[sq]])) {
-			scoreMG += RookSemiOpenFile;
-			scoreEG += RookSemiOpenFile;
+			scoreMG += RookSemiOpenFileMG;
 		}
 		phase -= rookPhase;
 	}
@@ -173,11 +210,9 @@ int EvalPosition(S_BOARD *pos) {
 		scoreEG -= RookEG[MIRROR64(SQ64(sq))];
 
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
-			scoreMG -= RookOpenFile;
-			scoreEG -= RookOpenFile;
+			scoreMG -= RookOpenFileMG;
 		} else if(!(pos->pawns[BLACK] & FileBBMask[FilesBrd[sq]])) {
-			scoreMG -= RookSemiOpenFile;
-			scoreEG -= RookSemiOpenFile;
+			scoreMG -= RookSemiOpenFileMG;
 		}
 		phase -= rookPhase;
 	}
@@ -194,11 +229,9 @@ int EvalPosition(S_BOARD *pos) {
 		scoreEG += QueenEG[SQ64(sq)];
 
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
-			scoreMG += QueenOpenFile;
-			scoreEG += QueenOpenFile;
+			scoreMG += QueenOpenFileMG;
 		} else if(!(pos->pawns[WHITE] & FileBBMask[FilesBrd[sq]])) {
-			scoreMG += QueenSemiOpenFile;
-			scoreEG += QueenSemiOpenFile;
+			scoreMG += QueenSemiOpenFileMG;
 		}
 		phase -= queenPhase;
 	}
@@ -215,11 +248,9 @@ int EvalPosition(S_BOARD *pos) {
 		scoreEG -= QueenEG[MIRROR64(SQ64(sq))];
 
 		if(!(pos->pawns[BOTH] & FileBBMask[FilesBrd[sq]])) {
-			scoreMG -= QueenOpenFile;
-			scoreEG -= QueenOpenFile;
+			scoreMG -= QueenOpenFileMG;
 		} else if(!(pos->pawns[BLACK] & FileBBMask[FilesBrd[sq]])) {
-			scoreMG -= QueenSemiOpenFile;
-			scoreEG -= QueenSemiOpenFile;
+			scoreMG -= QueenSemiOpenFileMG;
 		}
 		phase -= queenPhase;
 	}
@@ -249,9 +280,12 @@ int EvalPosition(S_BOARD *pos) {
 		scoreEG -= BishopPairEG;
 	}
 
+	//scoreMG += (pos->side == WHITE) ? tempoMG : -tempoMG;
+	//scoreEG += (pos->side == WHITE) ? tempoEG : -tempoEG;
+
 	// calculating game phase and interpolating score values between phases
 	phase = (phase * 256 + (totalPhase / 2)) / totalPhase;
-	score = ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
+	int score = ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
 
 	return pos->side == WHITE ? score : -score;
 

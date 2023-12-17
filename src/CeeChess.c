@@ -16,8 +16,8 @@ int main() {
 	S_BOARD pos[1];
     S_SEARCHINFO info[1];
     info->quit = FALSE;
-	pos->HashTable->pTable = NULL;
-    InitHashTable(pos->HashTable, 256);
+	HashTable->pTable = NULL;
+    InitHashTable(HashTable, 256);
 	setbuf(stdin, NULL);
     setbuf(stdout, NULL);
 
@@ -33,15 +33,15 @@ int main() {
 		if (line[0] == '\n')
 			continue;
 		if (!strncmp(line, "uci",3)) {
-			Uci_Loop(pos, info);
+			Uci_Loop(pos, info, HashTable);
 			if(info->quit == TRUE) break;
 			continue;
 		} else if (!strncmp(line, "xboard",6))	{
-			XBoard_Loop(pos, info);
+			XBoard_Loop(pos, info, HashTable);
 			if(info->quit == TRUE) break;
 			continue;
 		} else if (!strncmp(line, "CeeChess",8))	{
-			Console_Loop(pos, info);
+			Console_Loop(pos, info, HashTable);
 			if(info->quit == TRUE) break;
 			continue;
 		} else if(!strncmp(line, "quit",4))	{
@@ -49,7 +49,7 @@ int main() {
 		}
 	}
 
-	free(pos->HashTable->pTable);
+	free(HashTable->pTable);
 
 	return 0;
 }

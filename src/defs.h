@@ -31,6 +31,7 @@ typedef unsigned long long U64;
 #define MAXDEPTH 64
 
 #define START_FEN  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+#define MAX_FEN_LEN 90
 
 #define INFINITE 30000
 #define ISMATE (INFINITE - MAXDEPTH)
@@ -52,7 +53,7 @@ enum {
   A8 = 91, B8, C8, D8, E8, F8, G8, H8, NO_SQ, OFFBOARD
 };
 
-enum { FALSE, TRUE };
+enum { FALSE, TRUE, ORDER };
 
 enum { WKCA = 1, WQCA = 2, BKCA = 4, BQCA = 8 };
 
@@ -74,6 +75,7 @@ typedef struct {
 	int score;
 	int depth;
 	int flags;
+	int age;
 } S_HASHENTRY;
 
 typedef struct {
@@ -83,6 +85,7 @@ typedef struct {
 	int overWrite;
 	int hit;
 	int cut;
+	int currentage;
 } S_HASHTABLE;
 
 typedef struct {
@@ -117,14 +120,13 @@ typedef struct {
 	int bigPce[2];
 	int majPce[2];
 	int minPce[2];
-	int material[2];
+	int material[4];
 
 	S_UNDO history[MAXGAMEMOVES];
 
 	// piece list
 	int pList[13][10];
 
-	S_HASHTABLE HashTable[1];
 	int PvArray[MAXDEPTH];
 
 	int searchHistory[13][BRD_SQ_NUM];
@@ -198,6 +200,9 @@ typedef struct {
 
 #define MIRROR64(sq) (Mirror64[(sq)])
 
+#define COL(i) ((i) % 8)
+#define ROW(i) ((i) / 8)
+
 // for MDP
 #define MAX(a, b) ((a > b) ? a : b)
 #define MIN(a, b) ((a < b) ? a : b)
@@ -220,6 +225,8 @@ extern int PieceBig[13];
 extern int PieceMaj[13];
 extern int PieceMin[13];
 extern int PieceVal[13];
+extern int PieceValMG[13];
+extern int PieceValEG[13];
 extern int PieceCol[13];
 extern int PiecePawn[13];
 
@@ -240,6 +247,13 @@ extern U64 RankBBMask[8];
 extern U64 BlackPassedMask[64];
 extern U64 WhitePassedMask[64];
 extern U64 IsolatedMask[64];
+
+extern U64 BlackConnectedMask[64];
+extern U64 WhiteConnectedMask[64];
+
+extern S_HASHTABLE HashTable[1];
+
+extern int DistTable[64][64];
 
 /* FUNCTIONS */
 
@@ -282,9 +296,10 @@ extern void MirrorEvalTest(S_BOARD *pos);
 extern int SqIs120(const int sq);
 extern int PceValidEmptyOffbrd(const int pce);
 extern int MoveListOk(const S_MOVELIST *list,  const S_BOARD *pos);
-extern void DebugAnalysisTest(S_BOARD *pos, S_SEARCHINFO *info);
+extern void DebugAnalysisTest(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 
 // movegen.c
+extern int GetMobility(const S_BOARD *pos, const int side);
 extern void GenerateAllMoves(const S_BOARD *pos, S_MOVELIST *list);
 extern void GenerateAllCaps(const S_BOARD *pos, S_MOVELIST *list);
 extern int MoveExists(S_BOARD *pos, const int move);
@@ -300,7 +315,7 @@ extern void TakeNullMove(S_BOARD *pos);
 extern void PerftTest(int depth, S_BOARD *pos);
 
 // search.c
-extern void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info);
+extern void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 extern void InitSearch();
 
 // misc.c
@@ -309,21 +324,25 @@ extern void ReadInput(S_SEARCHINFO *info);
 
 // pvtable.c
 extern void InitHashTable(S_HASHTABLE *table, const int MB);
-extern void StoreHashEntry(S_BOARD *pos, const int move, int score, const int flags, const int depth);
-extern int ProbeHashEntry(S_BOARD *pos, int *move, int *score, int alpha, int beta, int depth);
-extern int ProbePvMove(const S_BOARD *pos);
-extern int GetPvLine(const int depth, S_BOARD *pos);
+extern void StoreHashEntry(S_BOARD *pos, S_HASHTABLE *table, const int move, int score, const int flags, const int depth);
+extern int ProbeHashEntry(S_BOARD *pos, S_HASHTABLE *table, int *move, int *score, int alpha, int beta, int depth);
+extern int ProbePvMove(const S_BOARD *pos, S_HASHTABLE *table);
+extern int GetPvLine(const int depth, S_BOARD *pos, S_HASHTABLE *table);
 extern void ClearHashTable(S_HASHTABLE *table);
 
 // evaluate.c
 extern int EvalPosition(S_BOARD *pos);
-extern void MirrorEvalTest(S_BOARD *pos) ;
+extern void MirrorEvalTest(S_BOARD *pos);
+extern void InitEval();
 
 // uci.c
-extern void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info);
+extern void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 
 // xboard.c
-extern void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info);
-extern void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info);
+extern void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
+extern void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
+
+// tuning.c
+extern void TuneEval(S_BOARD *pos, char *fileIn, char *fileOut, char *fileLog, int use_tanh);
 
 #endif
