@@ -11,11 +11,11 @@ BIN_DIR = .\bin
 TARGET = $(BIN_DIR)\CeeChess-v1.4.5.10
 
 ifeq ($(OS),Windows_NT)
-    RM = del /Q
-    EXE_EXTENSION = .exe
+	RM = del /Q
+	EXE_EXTENSION = .exe
 else
-    RM = rm -rf
-    EXE_EXTENSION = -linux
+	RM = rm -rf
+	EXE_EXTENSION = -linux
 	CFLAGS += -D LINUX
 endif
 
