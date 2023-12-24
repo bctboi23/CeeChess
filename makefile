@@ -23,26 +23,11 @@ endif
 SRC_FILES := $(wildcard $(SRC_DIR)/*.c)
 HEADER_FILES := $(wildcard $(SRC_DIR)/*.h)
 
-# Convert source files to object files in the ./bin directory
-OBJ_FILES := $(patsubst $(SRC_DIR)/%.c,$(BIN_DIR)/%.o,$(SRC_FILES))
-
-# Add dependencies to include header files
-DEP_FILES := $(OBJ_FILES:.o=.d)
-
-# Include dependency files
--include $(DEP_FILES)
-
 all: $(TARGET)$(EXE_EXTENSION)
 
-$(TARGET)$(EXE_EXTENSION): $(OBJ_FILES)
+$(TARGET)$(EXE_EXTENSION): $(SRC_FILES) $(HEADER_FILES)
 	$(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS)
-	-$(RM) $(BIN_DIR)\*.o
-
-# Rule for compiling individual source files to object files
-$(BIN_DIR)/%.o: $(SRC_DIR)/%.c $(HEADER_FILES)
-	$(CC) -c $< -o $@ $(CFLAGS)
 
 # clean the object files and the binary (don't need to clean object files anymore)
 clean:
-	-$(RM) $(BIN_DIR)\*.o 
 	-$(RM) $(TARGET)$(EXE_EXTENSION)
