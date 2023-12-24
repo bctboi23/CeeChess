@@ -12,8 +12,11 @@ TARGET = $(BIN_DIR)\CeeChess-v1.4.5.10
 
 ifeq ($(OS),Windows_NT)
     RM = del /Q
+    EXE_EXTENSION = .exe
 else
-    RM = rm -f
+    RM = rm -rf
+    EXE_EXTENSION = -linux
+	CFLAGS += -D LINUX
 endif
 
 # Automatically discover all source and header files in the ./src directory
@@ -23,9 +26,15 @@ HEADER_FILES := $(wildcard $(SRC_DIR)/*.h)
 # Convert source files to object files in the ./bin directory
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.c,$(BIN_DIR)/%.o,$(SRC_FILES))
 
-all: $(TARGET).exe
+# Add dependencies to include header files
+DEP_FILES := $(OBJ_FILES:.o=.d)
 
-$(TARGET): $(OBJ_FILES)
+# Include dependency files
+-include $(DEP_FILES)
+
+all: $(TARGET)$(EXE_EXTENSION)
+
+$(TARGET)$(EXE_EXTENSION): $(OBJ_FILES)
 	$(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS)
 	-$(RM) $(BIN_DIR)\*.o
 
@@ -33,10 +42,7 @@ $(TARGET): $(OBJ_FILES)
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.c $(HEADER_FILES)
 	$(CC) -c $< -o $@ $(CFLAGS)
 
-linux: CFLAGS += -D LINUX
-linux: $(TARGET)-linux
-
 # clean the object files and the binary (don't need to clean object files anymore)
 clean:
 	-$(RM) $(BIN_DIR)\*.o 
-	-$(RM) $(TARGET)
+	-$(RM) $(TARGET)$(EXE_EXTENSION)
