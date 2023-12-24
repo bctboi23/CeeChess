@@ -13,7 +13,7 @@ TARGET = $(BIN_DIR)\CeeChess-v1.4.5.10
 ifeq ($(OS),Windows_NT)
     RM = del /Q
 else
-    RM = rm -rf
+    RM = rm -f
 endif
 
 # Automatically discover all source and header files in the ./src directory
