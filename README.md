@@ -3,7 +3,9 @@ Hi! I am a bot written in C, heavily inspired by the Vice engine and video serie
 
 **Rating:**
 The rating for the latest release of the engine (v1.3.2) is around ~2275 CCRL, which compares to around 2400 FIDE classical rating. The upcoming release, v1.4, scores ~150 elo better in self-play to v1.3.2, and should play at around 2400 CCRL (since self-play inflates ratings).
-After the v1.4 release, I will likely either a. convert the evaluation function into a custom MLP to mess around with more of the constructed datasets I have on the backend with a likely better evaluation, or rewrite the engine from the ground to use bitboards (likely magic bitboard move generation), as bitboards come with a variety of perks when creating more evaluation features like mobility and more robust king safety that is computationally hard to do without having bitboards on hand.
+After the v1.4 release, I will likely either:
+a. convert the evaluation function into a custom MLP to mess around with more of the constructed datasets I have on the backend with a likely better evaluation   
+b. rewrite the engine from the ground to use bitboards (likely magic bitboard move generation), as bitboards come with a variety of perks when creating more evaluation features like mobility and more robust king safety that is computationally hard to do without having bitboards on hand.
 
 Self play ratings for all versions, anchored at SeeChess 1.0 (1.4 is the newest version):   
 (note, self-play tests were conducted at low time controls, and elo may be inflated in comparison to play against a gauntlet variety of engines. If I had to guess, CeeChess 1.4 will likely land ~2400 elo CCRL)
