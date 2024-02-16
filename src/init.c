@@ -33,8 +33,6 @@ U64 IsolatedMask[64];
 U64 BlackConnectedMask[64];
 U64 WhiteConnectedMask[64];
 
-U64 BlackPawnShield[64];
-U64 WhitePawnShield[64];
 
 void InitEvalMasks() {
 
@@ -59,16 +57,10 @@ void InitEvalMasks() {
 		BlackPassedMask[sq] = 0ULL;
 		WhiteConnectedMask[sq] = 0ULL;
 		BlackConnectedMask[sq] = 0ULL;
-		WhitePawnShield[sq] = 0ULL;
-		BlackPawnShield[sq] = 0ULL;
     }
 
 	for(sq = 0; sq < 64; ++sq) {
 		tsq = sq + 8;
-
-		if (tsq < 64) {
-			WhitePawnShield[sq] |= (1ULL << tsq);
-		}
 
         while(tsq < 64) {
             WhitePassedMask[sq] |= (1ULL << tsq);
@@ -76,11 +68,6 @@ void InitEvalMasks() {
         }
 
         tsq = sq - 8;
-
-		if (tsq >= 0) {
-			BlackPawnShield[sq] |= (1ULL << tsq);
-		}
-
         while(tsq >= 0) {
             BlackPassedMask[sq] |= (1ULL << tsq);
             tsq -= 8;
@@ -91,7 +78,6 @@ void InitEvalMasks() {
 
             tsq = sq + 7;
 			WhiteConnectedMask[sq] |= (1ULL << tsq);
-			WhitePawnShield[sq] |= (1ULL << tsq);
             while(tsq < 64) {
                 WhitePassedMask[sq] |= (1ULL << tsq);
                 tsq += 8;
@@ -99,7 +85,6 @@ void InitEvalMasks() {
 
             tsq = sq - 9;
 			BlackConnectedMask[sq] |= (1ULL << tsq);
-			BlackPawnShield[sq] |= (1ULL << tsq);
             while(tsq >= 0) {
                 BlackPassedMask[sq] |= (1ULL << tsq);
                 tsq -= 8;
@@ -111,7 +96,6 @@ void InitEvalMasks() {
 
             tsq = sq + 9;
 			WhiteConnectedMask[sq] |= (1ULL << tsq);
-			WhitePawnShield[sq] |= (1ULL << tsq);
             while(tsq < 64) {
                 WhitePassedMask[sq] |= (1ULL << tsq);
                 tsq += 8;
@@ -119,25 +103,12 @@ void InitEvalMasks() {
 
             tsq = sq - 7;
 			BlackConnectedMask[sq] |= (1ULL << tsq);
-			BlackPawnShield[sq] |= (1ULL << tsq);
             while(tsq >= 0) {
                 BlackPassedMask[sq] |= (1ULL << tsq);
                 tsq -= 8;
             }
         }
 	}
-
-	printf("Black Pawn Shield for a8: ");
-	PrintBitBoard(BlackPawnShield[56]);
-
-	printf("White Pawn Shield for b1: ");
-	PrintBitBoard(WhitePawnShield[1]);
-
-	printf("Black Connected Mask for e2: ");
-	PrintBitBoard(BlackConnectedMask[12]);
-
-	printf("White Connected Mask for e2: ");
-	PrintBitBoard(WhiteConnectedMask[12]);
 }
 
 void InitFilesRanksBrd() {

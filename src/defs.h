@@ -23,7 +23,7 @@ exit(1);}
 
 typedef unsigned long long U64;
 
-#define NAME "CeeChess_v1.4"
+#define NAME "CeeChess_v1.3"
 #define BRD_SQ_NUM 120
 
 #define MAXGAMEMOVES 2048
@@ -250,9 +250,6 @@ extern U64 IsolatedMask[64];
 
 extern U64 BlackConnectedMask[64];
 extern U64 WhiteConnectedMask[64];
-
-extern U64 BlackPawnShield[64];
-extern U64 WhitePawnShield[64];
 
 extern S_HASHTABLE HashTable[1];
 

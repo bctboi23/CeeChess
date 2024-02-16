@@ -9,9 +9,9 @@ char FileChar[] = "abcdefgh";
 int PieceBig[13] = { FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, FALSE };
 int PieceMaj[13] = { FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE };
 int PieceMin[13] = { FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE };
-int PieceVal[13]= { 0, 100, 325, 325, 550, 1000, 50000, 100, 325, 325, 550, 1000, 50000  }; // deprecated, kept to have old values around
-int PieceValMG[13]= { 0, 91, 377, 384, 515, 1124, 50000, 91, 377, 384, 515, 1124, 50000  };
-int PieceValEG[13]= { 0, 98, 327, 354, 614, 1127, 50000, 98, 327, 354, 614, 1127, 50000  };
+int PieceVal[13]= { 0, 100, 325, 325, 550, 1000, 50000, 100, 325, 325, 550, 1000, 50000  };
+int PieceValMG[13]= { 0, 96, 388, 403, 505, 1160, 50000, 96, 388, 403, 505, 1160, 50000  };
+int PieceValEG[13]= { 0, 91, 327, 357, 631, 1095, 50000, 91, 327, 357, 631, 1095, 50000  };
 //int PieceValEG[13]= { 0, 120, 325, 325, 575, 1000, 50000, 120, 325, 325, 575, 1000, 50000  };
 int PieceCol[13] = { BOTH, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE,
 	BLACK, BLACK, BLACK, BLACK, BLACK, BLACK };

@@ -1,36 +1,34 @@
 // parameters modifiable by tuning method
 #ifndef EVAL_T_H
 #define EVAL_T_H
-
 typedef struct {
     int TPieceValMG[5];
-	int TPieceValEG[5];
-
-	int TPawnPassedMG[8];
-    int TPawnPassedConnectedMG[8];
-	int TPawnPassedEG[8];
-    int TPawnPassedConnectedEG[8];
-
-	int TKingSemiOpen;
-	int TTropismValues[4];
-    int TTropismAdjs[4];
-    int TTropismMatAdjs[13];
-
     int TBishopPairMG;
+    int TPawnPassedMG[8];
+    int TPawnPassedConnectedMG[8];
     int TPawnConnectedMG;
     int TPawnIsolatedMG;
     int TRookOpenFileMG;
     int TRookSemiOpenFileMG;
     int TQueenOpenFileMG;
     int TQueenSemiOpenFileMG;
+    int TtempoMG;
 
+    int TPieceValEG[5];
     int TBishopPairEG;
+    int TPawnPassedEG[8];
+    int TPawnPassedConnectedEG[8];
     int TPawnConnectedEG;
     int TPawnIsolatedEG;
     int TRookOpenFileEG;
     int TRookSemiOpenFileEG;
     int TQueenOpenFileEG;
     int TQueenSemiOpenFileEG;
+    int TtempoEG;
+
+    int TTropismValues[4];
+    int TTropismAdjs[4];
+    int TTropismMatAdjs[13];
 
     int TPawnMG[64];
     int TPawnEG[64];
@@ -45,6 +43,12 @@ typedef struct {
     int TKingMG[64];
     int TKingEG[64];
 } S_EVAL_PARAMS;
+
+typedef struct {
+	S_EVAL_PARAMS params;
+	double score;
+	int rank;
+} S_GENETIC_POINT;
 
 // Game phase constants
 const int TminorPhase = 1;
@@ -62,10 +66,11 @@ const int TRookOpenFile = 10;
 const int TRookSemiOpenFile = 5;
 const int TQueenOpenFile = 5;
 const int TQueenSemiOpenFile = 3;
+const int TtempoMG = 0;
 
 // King safety constants
-const int TKingSemiOpen = 10;
-const int TTropismValues[4] = {16, 16, 32, 64};
+const int TTropismValues[4] = {1, 1, 2, 4};
+const int TTropismAdjs[4] = {-5, -5, -5, -5};
 const int TTropismMatAdjs[13] = {1, 2, 4, 8, 32, 64, 128, 192, 224, 230, 232, 234, 235};
 
 // Endgame constants
@@ -74,6 +79,7 @@ const int TPawnPassedEG[8] = { 0, 5, 15, 30, 50, 75, 125, 250 };
 const int TPawnPassedConnectedEG[8] = { 0, 0, 5, 15, 30, 50, 75, 125};
 const int TPawnConnectedEG = 50;
 const int TPawnIsolatedEG = -20;
+const int TtempoEG = 0;
 
 const int TRookOpenFileMG = TRookOpenFile;
 const int TRookOpenFileEG = TRookOpenFile;

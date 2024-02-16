@@ -40,13 +40,12 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 		return 0;
 	}
 
-	int diagonal_bonus;
 	int pce;
 	int pceNum;
 	int sq;
 	int phase = TtotalPhase;
-	int wPhase = 0;
-	int bPhase = 0;
+	int wPhase = TtotalPhase / 2;
+	int bPhase = TtotalPhase / 2;
 	//int mobility = GetMobility(pos, WHITE) - GetMobility(pos, BLACK);
 	int scoreMG = 0; //(pos->material[WHITE] - pos->material[BLACK]); //+ (mobilityFactorMG * mobility);
 	int scoreEG = 0; //(pos->material[WHITE + 2] - pos->material[BLACK + 2]); //+ (mobilityFactorEG * mobility);
@@ -64,13 +63,6 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 	scoreMG += params->TKingMG[SQ64(sq)];
 	scoreEG += params->TKingEG[SQ64(sq)];
 
-	// if there are semi-open files near this king, boost attack score for enemy
-	for (int i_sq = sq - 8; i_sq <= sq + 8; i_sq += 8) {
-		if (FilesBrd[i_sq] == OFFBOARD)
-			continue;
-		kingScoreB -= params->TKingSemiOpen * !(pos->pawns[WHITE] & FileBBMask[FilesBrd[i_sq]]);
-	}
-
 	pce = bK;
 	sq = pos->pList[pce][0];
 	int bKsq64 = SQ64(sq);
@@ -79,13 +71,6 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 
 	scoreMG -= params->TKingMG[MIRROR64(SQ64(sq))];
 	scoreEG -= params->TKingEG[MIRROR64(SQ64(sq))];
-
-	// if there are semi-open files near this king, boost attack score for enemy
-	for (int i_sq = sq - 8; i_sq <= sq + 8; i_sq += 8) {
-		if (FilesBrd[i_sq] == OFFBOARD)
-			continue;
-		kingScoreW += params->TKingSemiOpen * !(pos->pawns[BLACK] & FileBBMask[FilesBrd[i_sq]]);
-	}
 
 	pce = wP;
 	scoreMG += pos->pceNum[pce] * params->TPieceValMG[0];
@@ -180,9 +165,9 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 		scoreMG += params->TKnightMG[SQ64(sq)];
 		scoreEG += params->TKnightEG[SQ64(sq)];
 		phase -= TminorPhase;
-		wPhase += TminorPhase;
+		wPhase -= TminorPhase;
 
-		kingScoreW += (params->TTropismValues[0] * DistTable[SQ64(sq)][bKsq64]) / 16;
+		kingScoreW += params->TTropismValues[0] * DistTable[SQ64(sq)][bKsq64] + params->TTropismAdjs[0];
 	}
 
 	pce = bN;
@@ -197,9 +182,9 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 		scoreMG -= params->TKnightMG[MIRROR64(SQ64(sq))];
 		scoreEG -= params->TKnightEG[MIRROR64(SQ64(sq))];
 		phase -= TminorPhase;
-		bPhase += TminorPhase;
+		bPhase -= TminorPhase;
 
-		kingScoreB -= (params->TTropismValues[0] * DistTable[SQ64(sq)][wKsq64]) / 16;
+		kingScoreB -= params->TTropismValues[0] * DistTable[SQ64(sq)][wKsq64] + params->TTropismAdjs[0];
 	}
 
 	pce = wB;
@@ -214,10 +199,9 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 		scoreMG += params->TBishopMG[SQ64(sq)];
 		scoreEG += params->TBishopEG[SQ64(sq)];
 		phase -= TminorPhase;
-		wPhase += TminorPhase;
+		wPhase -= TminorPhase;
 
-		diagonal_bonus = Tbonus_dia_distance[abs(Tdiag_ne[SQ64(sq)] - Tdiag_ne[bKsq64])] + Tbonus_dia_distance[abs(Tdiag_nw[SQ64(sq)] - Tdiag_nw[bKsq64])];
-		kingScoreW += (params->TTropismValues[1] * (DistTable[SQ64(sq)][bKsq64] + diagonal_bonus)) / 16;
+		kingScoreW += params->TTropismValues[1] * (DistTable[SQ64(sq)][bKsq64] + Tbonus_dia_distance[abs(Tdiag_ne[SQ64(sq)] - Tdiag_ne[bKsq64])]) + params->TTropismAdjs[1];
 	}
 
 	pce = bB;
@@ -232,10 +216,9 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 		scoreMG -= params->TBishopMG[MIRROR64(SQ64(sq))];
 		scoreEG -= params->TBishopEG[MIRROR64(SQ64(sq))];
 		phase -= TminorPhase;
-		bPhase += TminorPhase;
+		bPhase -= TminorPhase;
 
-		diagonal_bonus = Tbonus_dia_distance[abs(Tdiag_ne[SQ64(sq)] - Tdiag_ne[wKsq64])] + Tbonus_dia_distance[abs(Tdiag_nw[SQ64(sq)] - Tdiag_nw[wKsq64])];
-		kingScoreB -= (params->TTropismValues[1] * (DistTable[SQ64(sq)][wKsq64] + diagonal_bonus)) / 16;
+		kingScoreB -= params->TTropismValues[1] * (DistTable[SQ64(sq)][wKsq64] + Tbonus_dia_distance[abs(Tdiag_ne[SQ64(sq)] - Tdiag_ne[wKsq64])]) + params->TTropismAdjs[1];
 	}
 
 	pce = wR;
@@ -259,9 +242,8 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 			scoreEG += params->TRookSemiOpenFileEG;
 		}
 		phase -= TrookPhase;
-		wPhase += TrookPhase;
 
-		kingScoreW += (params->TTropismValues[2] * DistTable[SQ64(sq)][bKsq64]) / 16;
+		kingScoreW += params->TTropismValues[2] * DistTable[SQ64(sq)][bKsq64] + params->TTropismAdjs[2];
 	}
 
 	pce = bR;
@@ -285,9 +267,8 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 			scoreEG -= params->TRookSemiOpenFileEG;
 		}
 		phase -= TrookPhase;
-		bPhase += TrookPhase;
 
-		kingScoreB -= (params->TTropismValues[2] * DistTable[SQ64(sq)][wKsq64]) / 16;
+		kingScoreB -= params->TTropismValues[2] * DistTable[SQ64(sq)][wKsq64] + params->TTropismAdjs[2];
 	}
 
 	pce = wQ;
@@ -311,10 +292,8 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 			scoreEG += params->TQueenSemiOpenFileEG;
 		}
 		phase -= TqueenPhase;
-		wPhase += TqueenPhase;
-	
-		diagonal_bonus = Tbonus_dia_distance[abs(Tdiag_ne[SQ64(sq)] - Tdiag_ne[bKsq64])] + Tbonus_dia_distance[abs(Tdiag_nw[SQ64(sq)] - Tdiag_nw[bKsq64])];
-		kingScoreW += (params->TTropismValues[3] * (DistTable[SQ64(sq)][bKsq64] + diagonal_bonus)) / 16;
+
+		kingScoreW += params->TTropismValues[3] * (DistTable[SQ64(sq)][bKsq64] + Tbonus_dia_distance[abs(Tdiag_ne[SQ64(sq)] - Tdiag_ne[bKsq64])]) + params->TTropismAdjs[3];
 	}
 
 	pce = bQ;
@@ -338,10 +317,8 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 			scoreEG -= params->TQueenSemiOpenFileEG;
 		}
 		phase -= TqueenPhase;
-		bPhase += TqueenPhase;
 
-		diagonal_bonus = Tbonus_dia_distance[abs(Tdiag_ne[SQ64(sq)] - Tdiag_ne[wKsq64])] + Tbonus_dia_distance[abs(Tdiag_nw[SQ64(sq)] - Tdiag_nw[wKsq64])];
-		kingScoreB -= (params->TTropismValues[3] * (DistTable[SQ64(sq)][wKsq64] + diagonal_bonus)) / 16;
+		kingScoreB -= params->TTropismValues[3] * (DistTable[SQ64(sq)][wKsq64] + Tbonus_dia_distance[abs(Tdiag_ne[SQ64(sq)] - Tdiag_ne[wKsq64])]) + params->TTropismAdjs[3];
 	}
 	//8/p6k/6p1/5p2/P4K2/8/5pB1/8 b - - 2 62
 	if(pos->pceNum[wB] >= 2) {
@@ -353,9 +330,12 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 		scoreEG -= params->TBishopPairEG;
 	}
 
+	scoreMG += (pos->side == WHITE) ? params->TtempoMG : -params->TtempoMG;
+	scoreEG += (pos->side == WHITE) ? params->TtempoEG : -params->TtempoEG;
+
 	// scale king safety by material non-linearly
-	kingScoreW = (kingScoreW * params->TTropismMatAdjs[MIN(wPhase, 12)]) / 256;
-	kingScoreB = (kingScoreB * params->TTropismMatAdjs[MIN(bPhase, 12)]) / 256;
+	kingScoreW *= params->TTropismMatAdjs[MIN(wPhase, 11)] / 256;
+	kingScoreB *= params->TTropismMatAdjs[MIN(bPhase, 11)] / 256;
 
 	scoreMG += kingScoreW + kingScoreB;
 	scoreEG += kingScoreW + kingScoreB;
@@ -369,185 +349,12 @@ static int EvalPositionTunable(S_BOARD *pos, S_EVAL_PARAMS *params) {
 
 }
 
-void printBar(int size, char* bar) {
-	for (int i = 0; i < size; i++) {
-		printf("%s", bar);
-	}
-	printf("\n");
-}
-
-void printProgressBar(int progress, int total, char* title) {
-	int width = 55;
-    printf("%s [", title);
-    int pos = width * progress / total;  // Calculate the position for the progress bar
-    for (int i = 0; i < width; ++i) {
-        if (i < pos) {
-            printf("=");
-        } else if (i == pos) {
-            printf(">");
-        } else {
-            printf(" ");
-        }
-    }
-    printf("] %d/%d\r", progress, total);  // '\r' moves the cursor to the beginning of the line
-    fflush(stdout);  // Flush the output to make sure the progress bar is immediately displayed
-}
-
-static int count_lines(FILE* file)
-{
-    char buf[256];
-    int counter = 1;
-    for(;;)
-    {
-        size_t res = fread(buf, 1, 256, file);
-        if (ferror(file))
-            return -1;
-
-        int i;
-        for(i = 0; i < res; i++)
-            if (buf[i] == '\n')
-                counter++;
-
-        if (feof(file))
-            break;
-    }
-	fseek(file, 0, SEEK_SET);
-    return counter;
-}
-
 static void paramsToList(S_EVAL_PARAMS *params, int* paramsList) {
 	memcpy(paramsList, params, sizeof(S_EVAL_PARAMS));
 }
 
-static void listToParams(int* paramsList, S_EVAL_PARAMS *params) {
+static void listToParams(int* paramsList, S_EVAL_PARAMS* params) {
 	memcpy(params, paramsList, sizeof(S_EVAL_PARAMS));
-}
-
-static void initParams(S_EVAL_PARAMS *params) {
-	int matVals[5] = {100, 325, 325, 550, 1000,};
-	memcpy(params->TPieceValMG, matVals, sizeof(matVals));
-    params->TBishopPairMG = TBishopPairMG;
-	memcpy(params->TPawnPassedMG, TPawnPassedMG, sizeof(TPawnPassedMG));
-	memcpy(params->TPawnPassedConnectedMG, TPawnPassedConnectedMG, sizeof(TPawnPassedConnectedMG));
-    params->TPawnConnectedMG = TPawnConnectedMG;
-    params->TPawnIsolatedMG = TPawnIsolatedMG;
-    params->TRookOpenFileMG = TRookOpenFileMG;
-    params->TRookSemiOpenFileMG = TRookSemiOpenFileMG;
-    params->TQueenOpenFileMG = TQueenOpenFileMG;
-    params->TQueenSemiOpenFileMG = TQueenSemiOpenFileMG;
-
-	memcpy(params->TPieceValEG, matVals, sizeof(matVals));
-    params->TBishopPairEG = TBishopPairEG;
-	memcpy(params->TPawnPassedEG, TPawnPassedEG, sizeof(TPawnPassedEG));
-	memcpy(params->TPawnPassedConnectedEG, TPawnPassedConnectedEG, sizeof(TPawnPassedConnectedEG));
-    params->TPawnConnectedEG = TPawnConnectedEG;
-    params->TPawnIsolatedEG = TPawnIsolatedEG;
-    params->TRookOpenFileEG = TRookOpenFileEG;
-    params->TRookSemiOpenFileEG = TRookSemiOpenFileEG;
-    params->TQueenOpenFileEG = TQueenOpenFileEG;
-    params->TQueenSemiOpenFileEG = TQueenSemiOpenFileEG;
-
-	params->TKingSemiOpen = TKingSemiOpen;
-	memcpy(params->TTropismValues, TTropismValues, sizeof(TTropismValues));
-	memcpy(params->TTropismMatAdjs, TTropismMatAdjs, sizeof(TTropismMatAdjs));
-
-	memcpy(params->TPawnMG, TPawnMG, sizeof(TPawnMG));
-	memcpy(params->TPawnEG, TPawnEG, sizeof(TPawnEG));
-	memcpy(params->TKnightMG, TKnightMG, sizeof(TKnightMG));
-	memcpy(params->TKnightEG, TKnightEG, sizeof(TKnightEG));
-	memcpy(params->TBishopMG, TBishopMG, sizeof(TBishopMG));
-	memcpy(params->TBishopEG, TBishopEG, sizeof(TBishopEG));
-	memcpy(params->TRookMG, TRookMG, sizeof(TRookMG));
-	memcpy(params->TRookEG, TRookEG, sizeof(TRookEG));
-	memcpy(params->TQueenMG, TQueenMG, sizeof(TQueenMG));
-	memcpy(params->TQueenEG, TQueenEG, sizeof(TQueenEG));
-	memcpy(params->TKingMG, TKingMG, sizeof(TKingMG));
-	memcpy(params->TKingEG, TKingEG, sizeof(TKingEG));
-}
-
-void readFENScore(char fen[MAX_FEN_LEN], double *score, FILE* inputFile) {
-	int character;
-	int index = 0;
-    while ((character = fgetc(inputFile)) != EOF && character != '[') {
-        fen[index++] = (char)character;
-    }
-	fscanf(inputFile, "%lf]\n", score);
-}
-
-void readFENScores(char (*fenBuf)[MAX_FEN_LEN], double *scores, FILE* inputFile, int numPos) {
-	for (int i = 0; i < numPos; i++) {
-		readFENScore(fenBuf[i], &scores[i], inputFile);
-	}
-}
-
-static double getError(S_BOARD *pos, S_EVAL_PARAMS *params, double K, char (*fenBuf)[MAX_FEN_LEN], double *scores, int numPos, int posOffset, int isTanh) {
-	double error = 0.0;
-	for (int i = posOffset; i < numPos + posOffset; i++) {
-		double result = scores[i];
-		// read FEN + score in pos
-		ParseFen(fenBuf[i], pos);
-		// evaluate the position
-		int score = EvalPositionTunable(pos, params);
-		double sigmoid = 1 / (1 + pow(10, ((-K * score) / 400)));
-		// this is incorrect for the stockfish augmented dataset so commented out
-		double tanhResult = 2 * result - 1;
-		//double tanhResult = result;
-		double tanh_eval = tanh((K * score) / 400);
-		// add to error (error is based on pseudo-huber loss, to reduce the power of outliers)
-		double residual = (isTanh) ? tanhResult - tanh_eval : result - sigmoid;
-		error += 0.25 * (sqrt(1 + (2 * pow(residual, 2))) - 1);
-	}
-	return error / numPos;
-}
-
-int getRandomNumber(int step_size) {
-    int randomNumber = rand() % (step_size * 2 + 1);
-    return randomNumber - step_size;
-}
-
-void swap(int *a, int *b) {
-    int temp = *a;
-    *a = *b;
-    *b = temp;
-}
-
-void shuffleIndices(int *indices, int size) {
-
-    // Initialize indices array
-    for (int i = 0; i < size; ++i) {
-        indices[i] = i;
-    }
-
-	int PSQTIndex = size - (64 * 6 * 2);
-
-	// Fisher-Yates shuffle the general indices
-    for (int i = PSQTIndex; i > 0; --i) {
-        int j = rand() % (i + 1);
-        swap(&indices[i], &indices[j]);
-    }
-
-    // Fisher-Yates shuffle the PSQT indices
-    for (int i = size - 1; i > PSQTIndex; --i) {
-        int j = rand() % (i + 1);
-        swap(&indices[i], &indices[j]);
-    }
-
-	// this way, the general terms are optimized before the psqt, but there is shuffling
-}
-
-void shuffleParents(int *indices, int size) {
-
-    // Initialize indices array
-    for (int i = 0; i < size; ++i) {
-        indices[i] = i;
-    }
-
-    // Fisher-Yates shuffle the PSQT indices
-    for (int i = size - 1; i > 0; --i) {
-        int j = rand() % (i + 1);
-        swap(&indices[i], &indices[j]);
-    }
-	// this way, the general terms are optimized before the psqt, but there is shuffling
 }
 
 static void printPSQTToFile(const int *array, FILE* file) {
@@ -561,10 +368,8 @@ static void printPSQTToFile(const int *array, FILE* file) {
 }
 
 static void printParamsToFile(S_EVAL_PARAMS *params, FILE *file) {
+	fprintf(file, "Current Parameters: \n");
 	for (int i = 0; i < 28; i++)
-		fprintf(file, "-");
-	fprintf(file, "\nCurrent Parameters: \n"); 
-	for (int i = 0; i < 19; i++)
 		fprintf(file, "-");
 	fprintf(file, "\nconst int PieceValMG[5] = {");
     for (int i = 0; i < 5; ++i) {
@@ -586,6 +391,7 @@ static void printParamsToFile(S_EVAL_PARAMS *params, FILE *file) {
     fprintf(file, "const int RookSemiOpenFileMG = %d;\n", params->TRookSemiOpenFileMG);
     fprintf(file, "const int QueenOpenFileMG = %d;\n", params->TQueenOpenFileMG);
     fprintf(file, "const int QueenSemiOpenFileMG = %d;\n", params->TQueenSemiOpenFileMG);
+    fprintf(file, "const int tempoMG = %d;\n", params->TtempoMG);
 
     fprintf(file, "const int PieceValEG[5] = {");
     for (int i = 0; i < 5; ++i) {
@@ -607,13 +413,17 @@ static void printParamsToFile(S_EVAL_PARAMS *params, FILE *file) {
     fprintf(file, "const int RookSemiOpenFileEG = %d;\n", params->TRookSemiOpenFileEG);
     fprintf(file, "const int QueenOpenFileEG = %d;\n", params->TQueenOpenFileEG);
     fprintf(file, "const int QueenSemiOpenFileEG = %d;\n", params->TQueenSemiOpenFileEG);
+    fprintf(file, "const int tempoEG = %d;\n", params->TtempoEG);
 
-	fprintf(file, "const int KingSemiOpen = %d;\n", params->TKingSemiOpen);
-	fprintf(file, "const int TropismValues[4] = {");
+	fprintf(file, "const int TTropismValues[4] = {");
     for (int i = 0; i < 4; ++i) {
         fprintf(file, "%d, ", params->TTropismValues[i]);
     }
-	fprintf(file, "};\nconst int TropismMatAdjs[13] = {");
+    fprintf(file, "};\nconst int TTropismAdjs[4] = {");
+    for (int i = 0; i < 4; ++i) {
+        fprintf(file, "%d, ", params->TTropismAdjs[i]);
+    }
+	fprintf(file, "};\nconst int TTropismMatAdjs[13] = {");
     for (int i = 0; i < 13; ++i) {
         fprintf(file, "%d, ", params->TTropismMatAdjs[i]);
     }
@@ -643,6 +453,156 @@ static void printParamsToFile(S_EVAL_PARAMS *params, FILE *file) {
     fprintf(file, "const int KingEG[64] = {\n");
     printPSQTToFile(params->TKingEG, file);
     fprintf(file, "\n");
+}
+
+static void initParams(S_EVAL_PARAMS *params) {
+	int matVals[5] = {100, 325, 325, 550, 1000,};
+	memcpy(params->TPieceValMG, matVals, sizeof(matVals));
+    params->TBishopPairMG = TBishopPairMG;
+	memcpy(params->TPawnPassedMG, TPawnPassedMG, sizeof(TPawnPassedMG));
+	memcpy(params->TPawnPassedConnectedMG, TPawnPassedConnectedMG, sizeof(TPawnPassedConnectedMG));
+    params->TPawnConnectedMG = TPawnConnectedMG;
+    params->TPawnIsolatedMG = TPawnIsolatedMG;
+    params->TRookOpenFileMG = TRookOpenFileMG;
+    params->TRookSemiOpenFileMG = TRookSemiOpenFileMG;
+    params->TQueenOpenFileMG = TQueenOpenFileMG;
+    params->TQueenSemiOpenFileMG = TQueenSemiOpenFileMG;
+    params->TtempoMG = TtempoMG;
+
+	memcpy(params->TPieceValEG, matVals, sizeof(matVals));
+    params->TBishopPairEG = TBishopPairEG;
+	memcpy(params->TPawnPassedEG, TPawnPassedEG, sizeof(TPawnPassedEG));
+	memcpy(params->TPawnPassedConnectedEG, TPawnPassedConnectedEG, sizeof(TPawnPassedConnectedEG));
+    params->TPawnConnectedEG = TPawnConnectedEG;
+    params->TPawnIsolatedEG = TPawnIsolatedEG;
+    params->TRookOpenFileEG = TRookOpenFileEG;
+    params->TRookSemiOpenFileEG = TRookSemiOpenFileEG;
+    params->TQueenOpenFileEG = TQueenOpenFileEG;
+    params->TQueenSemiOpenFileEG = TQueenSemiOpenFileEG;
+    params->TtempoEG = TtempoEG;
+
+	memcpy(params->TTropismValues, TTropismValues, sizeof(TTropismValues));
+	memcpy(params->TTropismAdjs, TTropismAdjs, sizeof(TTropismAdjs));
+	memcpy(params->TTropismMatAdjs, TTropismMatAdjs, sizeof(TTropismMatAdjs));
+
+	memcpy(params->TPawnMG, TPawnMG, sizeof(TPawnMG));
+	memcpy(params->TPawnEG, TPawnEG, sizeof(TPawnEG));
+	memcpy(params->TKnightMG, TKnightMG, sizeof(TKnightMG));
+	memcpy(params->TKnightEG, TKnightEG, sizeof(TKnightEG));
+	memcpy(params->TBishopMG, TBishopMG, sizeof(TBishopMG));
+	memcpy(params->TBishopEG, TBishopEG, sizeof(TBishopEG));
+	memcpy(params->TRookMG, TRookMG, sizeof(TRookMG));
+	memcpy(params->TRookEG, TRookEG, sizeof(TRookEG));
+	memcpy(params->TQueenMG, TQueenMG, sizeof(TQueenMG));
+	memcpy(params->TQueenEG, TQueenEG, sizeof(TQueenEG));
+	memcpy(params->TKingMG, TKingMG, sizeof(TKingMG));
+	memcpy(params->TKingEG, TKingEG, sizeof(TKingEG));
+}
+
+
+static int count_lines(FILE* file)
+{
+    char buf[256];
+    int counter = 1;
+    for(;;)
+    {
+        size_t res = fread(buf, 1, 256, file);
+        if (ferror(file))
+            return -1;
+
+        int i;
+        for(i = 0; i < res; i++)
+            if (buf[i] == '\n')
+                counter++;
+
+        if (feof(file))
+            break;
+    }
+	fseek(file, 0, SEEK_SET);
+    return counter;
+}
+
+void readFENScore(char fen[MAX_FEN_LEN], double *score, FILE* inputFile) {
+	int character;
+	int index = 0;
+    while ((character = fgetc(inputFile)) != EOF && character != '[') {
+        fen[index++] = (char)character;
+    }
+	fscanf(inputFile, "%lf]\n", score);
+}
+
+void readFENScores(char (*fenBuf)[MAX_FEN_LEN], double *scores, FILE* inputFile, int numPos) {
+	for (int i = 0; i < numPos; i++) {
+		readFENScore(fenBuf[i], &scores[i], inputFile);
+	}
+}
+
+static double getError(S_BOARD *pos, S_EVAL_PARAMS *params, double K, char (*fenBuf)[MAX_FEN_LEN], double *scores, int numPos, int isTanh) {
+	double error = 0.0;
+	for (int i = 0; i < numPos; i++) {
+		double result = scores[i];
+		// read FEN + score in pos
+		ParseFen(fenBuf[i], pos);
+		// evaluate the position
+		int score = EvalPositionTunable(pos, params);
+		double sigmoid = 1 / (1 + pow(10, ((-K * score) / 400)));
+		double tanhResult = 2 * result - 1;
+		double tanh_eval = tanh((K * score) / 400);
+		// add to error
+		error += (isTanh) ? pow(tanhResult - tanh_eval, 2) : pow(result - sigmoid, 2);
+	}
+	return error / numPos;
+}
+
+static void getFinalErrors(S_BOARD *pos, S_EVAL_PARAMS *params, char (*fenBuf)[MAX_FEN_LEN], double *scores, int numPos, double *final_sig, double *final_tanh, double sig_K, double tanh_K) {
+	*final_sig = getError(pos, params, sig_K, fenBuf, scores, numPos, 0);
+	*final_tanh = getError(pos, params, tanh_K, fenBuf, scores, numPos, 1);
+}
+
+int getRandomNumber(int step_size, float change_likelihood) {
+    srand((unsigned int)time(NULL));
+    int randomNumber = rand() % (step_size * 2 + 1);
+    return (((double)rand() / (double)RAND_MAX) > change_likelihood) ? randomNumber - step_size : 0;
+}
+
+// Generate a random number between 0 and 1
+double random01() {
+    return rand() / (double)RAND_MAX;
+}
+
+void swap(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void shuffleIndices(int *indices, int size) {
+    srand((unsigned int)time(NULL));
+
+    // Initialize indices array
+    for (int i = 0; i < size; ++i) {
+        indices[i] = i;
+    }
+
+	int PSQTIndex = size - (64 * 6 * 2);
+
+	// Fisher-Yates shuffle the general indices
+    for (int i = PSQTIndex; i > 0; --i) {
+        int j = rand() % (i + 1);
+        swap(&indices[i], &indices[j]);
+    }
+
+    // Fisher-Yates shuffle the PSQT indices
+    for (int i = size - 1; i > PSQTIndex; --i) {
+        int j = rand() % (i + 1);
+        swap(&indices[i], &indices[j]);
+    }
+
+	// this way, the general terms are optimized before the psqt, but there is shuffling
+}
+
+void simulatedAnnealing() {
+
 }
 
 void TuneEval(S_BOARD *pos, char *fileIn, char *fileOut, char *fileLog, int use_tanh) {
@@ -678,16 +638,9 @@ void TuneEval(S_BOARD *pos, char *fileIn, char *fileOut, char *fileLog, int use_
 	readFENScores(fens_buf, scores_buf, input, numPos);
 	fclose(input);
 
-	// get index of training set and validation set (90 - 10 split)
-	int numPosTrain = numPos;
-	//int numPosVal = numPos - numPosTrain;
-	int numPosVal = numPos;
-	int valOffset = 0;
-
 	double last_error = INFINITE;
-	double best_error = getError(pos, params, K, fens_buf, scores_buf, numPosTrain, 0, useTanh);
+	double best_error = getError(pos, params, K, fens_buf, scores_buf, numPos, useTanh);
 
-	// first tune the K via local search
 	printf("Optimizing K before tuning: \n");
 	double K_adj_val = 0.1;
 	while (best_error < last_error) {
@@ -695,14 +648,14 @@ void TuneEval(S_BOARD *pos, char *fileIn, char *fileOut, char *fileLog, int use_
 		printf("Local Search - K: %0.03lf\r", K);
 		K += K_adj_val;
 		listToParams(params_list, params);
-		double new_error = getError(pos, params, K, fens_buf, scores_buf, numPosTrain, 0, useTanh);
+		double new_error = getError(pos, params, K, fens_buf, scores_buf, numPos, useTanh);
 		if (new_error < best_error) {
 			best_error = new_error;
 			continue;
 		}
 		K -= 2 * K_adj_val;
 		listToParams(params_list, params);
-		new_error = getError(pos, params, K, fens_buf, scores_buf, numPosTrain, 0, useTanh);
+		new_error = getError(pos, params, K, fens_buf, scores_buf, numPos, useTanh);
 		if (new_error < best_error) {
 			best_error = new_error;
 			continue;
@@ -722,42 +675,36 @@ void TuneEval(S_BOARD *pos, char *fileIn, char *fileOut, char *fileLog, int use_
 		last_error = best_error;
 		printf("Epoch %d: \n", epoch);
 
-		if (epoch < 10) {
-			// first do simulated annealing for first 10 iterations
-			// explorative part of the algorithm, so annealing parameters are tuned for high exploration
-			int sim_iters = 500;
-			double temperature = init_temp / epoch;
-			double cooling_rate = 0.95;
-			double tune_probability = 0.05;
-			int tune_size = 2;
-			printf(" - Simulated Annealing\n");
-			for (int i = 0; i < sim_iters; i++) {
-				for (int i = 0; i < params_length; i++) {
-					double random_number = rand() / (double)RAND_MAX;
-					if (random_number < tune_probability)
-						new_params_list[i] = params_list[i] + getRandomNumber(tune_size);
-					else
-						new_params_list[i] = params_list[i];
-				}
-				listToParams(new_params_list, params);
-				double new_error = getError(pos, params, K, fens_buf, scores_buf, numPosTrain, 0, useTanh);
-				double random_number = rand() / (double)RAND_MAX;
-				if (new_error < best_error || random_number < exp((best_error - new_error) / temperature)) {
-					best_error = new_error;
-					memcpy(params_list, new_params_list, sizeof(S_EVAL_PARAMS));
-				}
-				temperature *= cooling_rate;
-				printf(" --- Iteration %3d - Temp %3.03lf - Error: %0.06lf\r", i + 1, temperature, best_error);
+		// first do simulated annealing
+		// explorative part of the algorithm, so annealing parameters are tuned for high exploration
+		int sim_iters = 400;
+		double temperature = init_temp / epoch;
+		double cooling_rate = 0.95;
+		double tune_probability = 0.005;
+		int tune_size = 2;
+		printf(" - Simulated Annealing\n");
+		for (int i = 0; i < sim_iters; i++) {
+			for (int i = 0; i < params_length; i++) {
+				new_params_list[i] = params_list[i] + getRandomNumber(tune_size, tune_probability);
 			}
+			listToParams(new_params_list, params);
+			double new_error = getError(pos, params, K, fens_buf, scores_buf, numPos, useTanh);
+			if (new_error < best_error || random01() < exp((best_error - new_error) / temperature)) {
+				best_error = new_error;
+				memcpy(params_list, new_params_list, sizeof(S_EVAL_PARAMS));
+			}
+			temperature *= cooling_rate;
+			printf(" --- Iteration %3d - Temp %0.03lf - Error: %0.06lf\r", i + 1, temperature, best_error);
 		}
 		
 		printf("\n");
 		//printParams(params);
 
 		// then perform local search, with a max step size max_in_a_row 
+		// (can afford to be agressive with allowed in a row steps because of annealing and the shuffle)
 		// exploitative part of the algorithm
 		int steps_in_a_row = 0;
-		int max_in_a_row = MIN((epoch / 2), 10); // slowly increase exploitaion as algorithm goes on
+		int max_in_a_row = 20;
 		printf(" - Shuffled Local Search\n");
 		int *shuffled_indices = (int *)malloc(params_length * sizeof(int));
 		shuffleIndices(shuffled_indices, params_length);
@@ -765,12 +712,12 @@ void TuneEval(S_BOARD *pos, char *fileIn, char *fileOut, char *fileLog, int use_
 			printf(" --- Parameter %3d/%d ---------- Error: %0.06lf\r", i + 1, params_length, best_error);
 			params_list[shuffled_indices[i]] += adjust_val;
 			listToParams(params_list, params);
-			double new_error = getError(pos, params, K, fens_buf, scores_buf, numPosTrain, 0, useTanh);
+			double new_error = getError(pos, params, K, fens_buf, scores_buf, numPos, useTanh);
 			if (new_error < best_error) {
 				best_error = new_error;
 				i--;
 				steps_in_a_row++;
-				if (steps_in_a_row >= max_in_a_row) {
+				if (steps_in_a_row == max_in_a_row) {
 					i++;
 					steps_in_a_row = 0;
 				}
@@ -778,12 +725,12 @@ void TuneEval(S_BOARD *pos, char *fileIn, char *fileOut, char *fileLog, int use_
 			}
 			params_list[shuffled_indices[i]] -= 2 * adjust_val;
 			listToParams(params_list, params);
-			new_error = getError(pos, params, K, fens_buf, scores_buf, numPosTrain, 0, useTanh);
+			new_error = getError(pos, params, K, fens_buf, scores_buf, numPos, useTanh);
 			if (new_error < best_error) {
 				best_error = new_error;
 				i--;
 				steps_in_a_row++;
-				if (steps_in_a_row >= max_in_a_row) {
+				if (steps_in_a_row == max_in_a_row) {
 					i++;
 					steps_in_a_row = 0;
 				}
@@ -796,11 +743,11 @@ void TuneEval(S_BOARD *pos, char *fileIn, char *fileOut, char *fileLog, int use_
 		FILE* log = fopen(fileLog, "a");
 		for (int i = 0; i < 28; i++)
 			fprintf(log, "-");
-		// test final errors
-		double train_error = getError(pos, params, K, fens_buf, scores_buf, numPosTrain, 0, useTanh);
-		double valid_error = getError(pos, params, K, fens_buf, scores_buf, numPosVal, valOffset, useTanh);
-		printf(" - Train Error: %lf\n - Valid Error: %lf\n", train_error, valid_error);
-		fprintf(log, "\n--- Epoch %d ---\n - Train Error: %lf\n - Valid Error: %lf\n", epoch, train_error, valid_error);
+		double final_tanh;
+		double final_sig;
+		// test final errors against a close to optimal K for most sets, so I can test wether tanh or sigmoid works better for minimization
+		getFinalErrors(pos, params, fens_buf, scores_buf, numPos, &final_sig, &final_tanh, 1.4, 1.6);
+		fprintf(log, "\nEpoch %d --- Error:\n - Tanh (K = %0.02lf): %lf\n -- Sig (K = %0.02lf): %lf\n", epoch, 1.6, final_tanh, 1.4, final_sig);
 		printParamsToFile(params, log);
 		fclose(log);
 
@@ -808,7 +755,8 @@ void TuneEval(S_BOARD *pos, char *fileIn, char *fileOut, char *fileLog, int use_
 		FILE* out = fopen(fileOut, "w");
 		for (int i = 0; i < 28; i++)
 			fprintf(out, "-");
-		fprintf(log, "\n--- Epoch %d ---\n - Train Error: %lf\n - Valid Error: %lf\n", epoch, train_error, valid_error);
+		getFinalErrors(pos, params, fens_buf, scores_buf, numPos, &final_sig, &final_tanh, 1.4, 1.6);
+		fprintf(out, "\nEpoch %d --- Error:\n - Tanh (K = %0.02lf): %lf\n -- Sig (K = %0.02lf): %lf\n", epoch, 1.6, final_tanh, 1.4, final_sig);
 		printParamsToFile(params, log);
 		fclose(out);
 
@@ -816,9 +764,7 @@ void TuneEval(S_BOARD *pos, char *fileIn, char *fileOut, char *fileLog, int use_
 	} while (best_error < last_error);
 
 	listToParams(params_list, params);
-	double train_error = getError(pos, params, K, fens_buf, scores_buf, numPosTrain, 0, useTanh);
-	double valid_error = getError(pos, params, K, fens_buf, scores_buf, numPosVal, valOffset, useTanh);
-	printf("Error after tuning --- Train: %0.06lf | Valid: %0.06lf", train_error, valid_error);
+	printf("Error after tuning: %0.06lf --- ", getError(pos, params, K, fens_buf, scores_buf, numPos, useTanh));
 
 	printf("Tuned Parameters in %s\n", fileOut);
 	free(params_list);

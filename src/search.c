@@ -13,12 +13,12 @@ static const int RazorDepth = 2;
 static const int RazorMargin[3] = {0, 200, 400};
 
 // Futility Values
-static const int FutilityDepth = 10;
-static const int FutilityMargin = 150;
+static const int FutilityDepth = 6;
+static const int FutilityMargin[7] = {0, 200, 325, 450, 575, 700, 825};
 
 // Reverse Futility Values
-static const int RevFutilityDepth = 10;
-static const int RevFutilityMargin = 200;
+static const int RevFutilityDepth = 5;
+static const int RevFutilityMargin[6] = {0, 200, 400, 600, 800, 1000};
 
 // LMR Values
 static const int LateMoveDepth = 3;
@@ -138,8 +138,7 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 	if(Score >= beta) {
 		return beta;
 	}
-
-	if (Score > alpha) {
+	if(Score > alpha) {
 		alpha = Score;
 	}
 
@@ -152,11 +151,6 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 
 	for(MoveNum = 0; MoveNum < list->count; ++MoveNum) {
 
-		// return immediately if stopped
-		if(info->stopped == TRUE) {
-			return beta;
-		}
-
 		PickNextMove(MoveNum, list);
 
         if ( !MakeMove(pos,list->moves[MoveNum].move))  {
@@ -166,6 +160,10 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 		Legal++;
 		Score = -Quiescence( -beta, -alpha, pos, info);
         TakeMove(pos);
+
+		if(info->stopped == TRUE) {
+			return 0;
+		}
 
 		if(Score > alpha) {
 			if(Score >= beta) {
@@ -243,8 +241,8 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	}
 
 	// Reverse Futility Pruning (prunes near beta)
-	if (depth <= RevFutilityDepth && !PvMove && !InCheck && abs(beta) < ISMATE && positionEval - (RevFutilityMargin * depth) >= beta) {
-		return positionEval - (RevFutilityMargin * depth);
+	if (depth <= RevFutilityDepth && !PvMove && !InCheck && abs(beta) < ISMATE && positionEval - RevFutilityMargin[depth] >= beta) {
+		return positionEval - RevFutilityMargin[depth];
 	}
 
 	// Null Move Pruning
@@ -253,7 +251,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		Score = -AlphaBeta( -beta, -beta + 1, depth - 1 - R, pos, info, FALSE, FALSE, table);
 		TakeNullMove(pos);
 		if(info->stopped == TRUE) {
-			return beta;
+			return 0;
 		}
 
 		if (Score >= beta && abs(Score) < ISMATE) {
@@ -287,27 +285,22 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	int FoundPv = FALSE;
 
 	// Futility Pruning flag (if node is futile (unlikely to raise alpha), this flag is set)
-	int FutileNode = (depth <= FutilityDepth && positionEval + (FutilityMargin * depth) <= alpha && abs(Score) < ISMATE && (pos->bigPce[pos->side] > 0)) ? 1 : 0;
+	int FutileNode = (depth <= FutilityDepth && positionEval + FutilityMargin[depth] <= alpha && abs(Score) < ISMATE) ? 1 : 0;
 
 	for(MoveNum = 0; MoveNum < list->count; ++MoveNum) {
 
-		// return if stopped
-		if(info->stopped == TRUE) {
-			return beta;
-		}
-
 		PickNextMove(MoveNum, list);
-
-		// Futility Pruning (if node is considered futile, and at least 1 legal move has been searched, don't search any more quiet moves in the position)
-		int isMoveCheck = SqAttacked(pos->KingSq[pos->side^1],pos->side,pos);
-		int nonCapture = !(list->moves[MoveNum].move & MFLAGCAP);
-		int isQuiet = (nonCapture && !(list->moves[MoveNum].move & MFLAGPROM) && !isMoveCheck);
-		if (Legal && FutileNode && isQuiet) {
-			continue;
-		}
 
 		// if move is legal, play it
 		if ( !MakeMove(pos,list->moves[MoveNum].move))  {
+			continue;
+		}
+
+		// Futility Pruning (if node is considered futile, and at least 1 legal move has been searched, don't search any more quiet moves in the position)
+		int isMoveCheck = SqAttacked(pos->KingSq[pos->side^1],pos->side,pos);
+		int isQuiet = (!(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM) && !isMoveCheck);
+		if (Legal && FutileNode && isQuiet) {
+			TakeMove(pos);
 			continue;
 		}
 
@@ -316,8 +309,8 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		// PVS (speeds up search with good move ordering)
 		if (FoundPv == TRUE) {
 
-			// Late Move Reductions (reduces quiet moves late in the search)
-			if (depth >= LateMoveDepth && Legal > FullSearchMoves && !InCheck && isQuiet && DoLMR) {
+			// Late Move Reductions at Root (reduces moves if past full move search limit (not reducing captures, checks, or promotions))
+			if (depth >= LateMoveDepth && Legal > FullSearchMoves && isQuiet && DoLMR) {
 
 				// get initial reduction depth
 				int reduce = LMRTable[MIN(depth, 63)][MIN(Legal, 63)];
@@ -336,26 +329,29 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 				// search with the reduced depth
 				Score = -AlphaBeta( -alpha - 1, -alpha, depth - reduce, pos, info, TRUE, FALSE, table);
 
-				// If the LMR fails, do a full depth null-window search
-				if (Score > alpha && Score < beta) {
-					Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, FALSE, table);
-				}
 			} else {
-				// If LMR conditions not met, do a null window search (because we are using PVS)
-				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, DoLMR, table);
-			}
-			// If the null window fails, do a full window search
-			if (Score > alpha && Score < beta) {
-				Score = -AlphaBeta( -beta, -alpha, depth - 1, pos, info, TRUE, FALSE, table);
-			}
+				// If LMR conditions not met (not at root, or tactical move), do a null window search (because we are using PVS)
+				Score = -AlphaBeta( -alpha - 1, -alpha, depth - 1, pos, info, TRUE, TRUE, table);
 
+			}
+			if (Score > alpha && Score < beta) {
+				// If the LMR or the null window fails, do a full search
+				Score = -AlphaBeta( -beta, -alpha, depth - 1, pos, info, TRUE, FALSE, table);
+
+			}
 		} else {
 			// If no PV found, do a full search
 			Score = -AlphaBeta( -beta, -alpha, depth - 1, pos, info, TRUE, FALSE, table);
+
 		}
 
 		TakeMove(pos);
 
+		int nonCapture = !(list->moves[MoveNum].move & MFLAGCAP);
+
+		if(info->stopped == TRUE) {
+			return 0;
+		}
 		if(Score > BestScore) {
 			BestScore = Score;
 			BestMove = list->moves[MoveNum].move;
