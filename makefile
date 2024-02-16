@@ -5,18 +5,20 @@ CC = gcc
 CFLAGS = -O3 -s -Wall
 LDFLAGS = -lm
 
-SRC_DIR = .\src
-BIN_DIR = .\bin
-
-TARGET = $(BIN_DIR)\CeeChess-v1.4
-
+# windows requires backslash
 ifeq ($(OS),Windows_NT)
 	RM = del /Q
 	EXE_EXTENSION = .exe
+	SRC_DIR = .\src
+	BIN_DIR = .\bin
+	TARGET = $(BIN_DIR)\CeeChess-v1.4-genetic
 else
 	RM = rm -rf
-	EXE_EXTENSION = -linux
+	EXE_EXTENSION = -linux 
 	CFLAGS += -D LINUX
+	SRC_DIR = ./src
+	BIN_DIR = ./bin
+	TARGET = $(BIN_DIR)/CeeChess-v1.4-genetic
 endif
 
 # Automatically discover all source and header files in the ./src directory
