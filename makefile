@@ -11,14 +11,14 @@ ifeq ($(OS),Windows_NT)
 	EXE_EXTENSION = .exe
 	SRC_DIR = .\src
 	BIN_DIR = .\bin
-	TARGET = $(BIN_DIR)\CeeChess-v1.4-genetic
+	TARGET = $(BIN_DIR)\CeeChess-v1.4
 else
 	RM = rm -rf
 	EXE_EXTENSION = -linux 
 	CFLAGS += -D LINUX
 	SRC_DIR = ./src
 	BIN_DIR = ./bin
-	TARGET = $(BIN_DIR)/CeeChess-v1.4-genetic
+	TARGET = $(BIN_DIR)/CeeChess-v1.4
 endif
 
 # Automatically discover all source and header files in the ./src directory
