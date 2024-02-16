@@ -51,6 +51,7 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 - Passed Pawn evaluation (Midgame and Endgame tables)
 - Isolated pawn heuristic
 - Open file heuristics (for Rook and Queen)
+- King Safety (King Tropism, weighted by the number pieces left on the board + attack bonuses for semi-open files near the king)
 - Tapered evaluation
 
 **Planned Improvements (ordered by perceived feasibility):**
