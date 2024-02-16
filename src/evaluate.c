@@ -14,7 +14,7 @@ void InitEval() {
    	}
 }
 
-static int MaterialDraw(const S_BOARD *pos) {
+static inline int MaterialDraw(const S_BOARD *pos) {
 
 	ASSERT(CheckBoard(pos));
 
@@ -38,23 +38,62 @@ static int MaterialDraw(const S_BOARD *pos) {
   return FALSE;
 }
 
-inline int EvalPosition(S_BOARD *pos) {
+int EvalPosition(S_BOARD *pos) {
 
 	ASSERT(CheckBoard(pos));
 
 	// test for drawn position before doing anything
-	if(!pos->pceNum[wP] && !pos->pceNum[bP] && MaterialDraw(pos) == TRUE) {
+	if((!pos->pceNum[wP] && !pos->pceNum[bP] && MaterialDraw(pos) == TRUE)) {
 		return 0;
 	}
 
+	int diagonal_bonus;
 	int pce;
 	int pceNum;
 	int sq;
 	int phase = totalPhase;
+	int wPhase = 0;
+	int bPhase = 0;
 	//int mobility = GetMobility(pos, WHITE) - GetMobility(pos, BLACK);
 	int scoreMG = (pos->material[WHITE] - pos->material[BLACK]); //+ (mobilityFactorMG * mobility);
 	int scoreEG = (pos->material[WHITE + 2] - pos->material[BLACK + 2]); //+ (mobilityFactorEG * mobility);
 
+	int kingScoreW = 0;
+	int kingScoreB = 0;
+
+	// get king squares to calculate king tropism
+	pce = wK;
+	sq = pos->pList[pce][0];
+	int wKsq64 = SQ64(sq);
+	ASSERT(SqOnBoard(sq));
+	ASSERT(SQ64(sq)>=0 && SQ64(sq)<=63);
+
+	scoreMG += KingMG[SQ64(sq)];
+	scoreEG += KingEG[SQ64(sq)];
+
+	// if there are semi-open files near this king, boost attack score for enemy
+	for (int i_sq = sq - 8; i_sq <= sq + 8; i_sq += 8) {
+		if (FilesBrd[i_sq] == OFFBOARD)
+			continue;
+		kingScoreB -= KingSemiOpen * !(pos->pawns[WHITE] & FileBBMask[FilesBrd[i_sq]]);
+	}
+
+	pce = bK;
+	sq = pos->pList[pce][0];
+	int bKsq64 = SQ64(sq);
+	ASSERT(SqOnBoard(sq));
+	ASSERT(MIRROR64(SQ64(sq))>=0 && MIRROR64(SQ64(sq))<=63);
+
+	scoreMG -= KingMG[MIRROR64(SQ64(sq))];
+	scoreEG -= KingEG[MIRROR64(SQ64(sq))];
+	
+	// if there are semi-open files near this king, boost attack score for enemy
+	for (int i_sq = sq - 8; i_sq <= sq + 8; i_sq += 8) {
+		if (FilesBrd[i_sq] == OFFBOARD)
+			continue;
+		kingScoreW += KingSemiOpen * !(pos->pawns[BLACK] & FileBBMask[FilesBrd[i_sq]]);
+	}
+	
 	pce = wP;
 	for(pceNum = 0; pceNum < pos->pceNum[pce]; ++pceNum) {
 		sq = pos->pList[pce][pceNum];
@@ -141,6 +180,9 @@ inline int EvalPosition(S_BOARD *pos) {
 		scoreMG += KnightMG[SQ64(sq)];
 		scoreEG += KnightEG[SQ64(sq)];
 		phase -= minorPhase;
+
+		wPhase += minorPhase;
+		kingScoreW += (TropismValues[0] * DistTable[SQ64(sq)][bKsq64]) / 16;
 	}
 
 	pce = bN;
@@ -153,6 +195,9 @@ inline int EvalPosition(S_BOARD *pos) {
 		scoreMG -= KnightMG[MIRROR64(SQ64(sq))];
 		scoreEG -= KnightEG[MIRROR64(SQ64(sq))];
 		phase -= minorPhase;
+
+		bPhase += minorPhase;
+		kingScoreB -= (TropismValues[0] * DistTable[SQ64(sq)][wKsq64]) / 16;
 	}
 
 	pce = wB;
@@ -165,6 +210,10 @@ inline int EvalPosition(S_BOARD *pos) {
 		scoreMG += BishopMG[SQ64(sq)];
 		scoreEG += BishopEG[SQ64(sq)];
 		phase -= minorPhase;
+
+		wPhase += minorPhase;
+		diagonal_bonus = bonus_dia_distance[abs(diag_ne[SQ64(sq)] - diag_ne[bKsq64])] + bonus_dia_distance[abs(diag_nw[SQ64(sq)] - diag_nw[bKsq64])];
+		kingScoreW += (TropismValues[1] * (DistTable[SQ64(sq)][bKsq64] + diagonal_bonus)) / 16;
 	}
 
 	pce = bB;
@@ -177,6 +226,10 @@ inline int EvalPosition(S_BOARD *pos) {
 		scoreMG -= BishopMG[MIRROR64(SQ64(sq))];
 		scoreEG -= BishopEG[MIRROR64(SQ64(sq))];
 		phase -= minorPhase;
+
+		bPhase += minorPhase;
+		diagonal_bonus = bonus_dia_distance[abs(diag_ne[SQ64(sq)] - diag_ne[wKsq64])] + bonus_dia_distance[abs(diag_nw[SQ64(sq)] - diag_nw[wKsq64])];
+		kingScoreB -= (TropismValues[1] * (DistTable[SQ64(sq)][wKsq64] + diagonal_bonus)) / 16;
 	}
 
 	pce = wR;
@@ -196,6 +249,9 @@ inline int EvalPosition(S_BOARD *pos) {
 			scoreMG += RookSemiOpenFileMG;
 		}
 		phase -= rookPhase;
+
+		wPhase += rookPhase;
+		kingScoreW += (TropismValues[2] * DistTable[SQ64(sq)][bKsq64]) / 16;
 	}
 
 	pce = bR;
@@ -215,6 +271,9 @@ inline int EvalPosition(S_BOARD *pos) {
 			scoreMG -= RookSemiOpenFileMG;
 		}
 		phase -= rookPhase;
+
+		bPhase += rookPhase;
+		kingScoreB -= (TropismValues[2] * DistTable[SQ64(sq)][wKsq64]) / 16;
 	}
 
 	pce = wQ;
@@ -234,6 +293,10 @@ inline int EvalPosition(S_BOARD *pos) {
 			scoreMG += QueenSemiOpenFileMG;
 		}
 		phase -= queenPhase;
+
+		wPhase += queenPhase;
+		diagonal_bonus = bonus_dia_distance[abs(diag_ne[SQ64(sq)] - diag_ne[bKsq64])] + bonus_dia_distance[abs(diag_nw[SQ64(sq)] - diag_nw[bKsq64])];
+		kingScoreW += (TropismValues[3] * (DistTable[SQ64(sq)][bKsq64] + diagonal_bonus)) / 16;
 	}
 
 	pce = bQ;
@@ -253,6 +316,10 @@ inline int EvalPosition(S_BOARD *pos) {
 			scoreMG -= QueenSemiOpenFileMG;
 		}
 		phase -= queenPhase;
+
+		bPhase += queenPhase;
+		diagonal_bonus = bonus_dia_distance[abs(diag_ne[SQ64(sq)] - diag_ne[wKsq64])] + bonus_dia_distance[abs(diag_nw[SQ64(sq)] - diag_nw[wKsq64])];
+		kingScoreB -= (TropismValues[3] * (DistTable[SQ64(sq)][wKsq64] + diagonal_bonus)) / 16;
 	}
 	//8/p6k/6p1/5p2/P4K2/8/5pB1/8 b - - 2 62
 	pce = wK;
@@ -280,8 +347,12 @@ inline int EvalPosition(S_BOARD *pos) {
 		scoreEG -= BishopPairEG;
 	}
 
-	//scoreMG += (pos->side == WHITE) ? tempoMG : -tempoMG;
-	//scoreEG += (pos->side == WHITE) ? tempoEG : -tempoEG;
+	// scale king safety by material non-linearly
+	kingScoreW = (kingScoreW * TropismMatAdjs[MIN(wPhase, 12)]) / 256;
+	kingScoreB = (kingScoreB * TropismMatAdjs[MIN(bPhase, 12)]) / 256;
+
+	scoreMG += kingScoreW + kingScoreB;
+	scoreEG += kingScoreW + kingScoreB;
 
 	// calculating game phase and interpolating score values between phases
 	phase = (phase * 256 + (totalPhase / 2)) / totalPhase;

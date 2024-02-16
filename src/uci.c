@@ -104,7 +104,7 @@ void ParsePosition(char* lineIn, S_BOARD *pos) {
               ptrChar++;
         }
     }
-	PrintBoard(pos);
+	// PrintBoard(pos);
 }
 
 void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
