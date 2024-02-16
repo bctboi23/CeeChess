@@ -2,7 +2,7 @@
 Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! If you want to try your hand at facing me, I am occasionally on lichess at https://lichess.org/@/seeChessBot! I will be moving to a fly.io app soon as well!
 
 **Rating:**
-The rating for the latest release of the engine (v1.3.2) is around ~2275 CCRL, which compares to around 2400 FIDE classical rating. The upcoming release, v1.4, scores ~150 elo better in self-play to v1.3.2, and should play at around 2400 CCRL (since self-play inflates ratings).
+The rating for the latest release of the engine (v1.4), scores ~150 elo better in self-play to v1.3.2, and should play at ~2400 CCRL (since self-play inflates ratings). This compares roughly to FIDE 2500, although there is no real 1-1 correspondence between these rating systems
 After the v1.4 release, I will likely either:   
 1. convert the evaluation function into a custom MLP to mess around with more of the constructed datasets I have on the backend with a likely better evaluation.   
 2. rewrite the engine from the ground to use bitboards (likely magic bitboard move generation), as bitboards come with a variety of perks when creating more evaluation features like mobility and more robust king safety that are computationally hard to replicate in a mailbox engine without having bitboards on hand, making the evaulation unreasonably slow.
