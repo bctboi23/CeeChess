@@ -100,7 +100,7 @@ static void AddQuietMove( const S_BOARD *pos, int move, S_MOVELIST *list ) {
 	} else if (pos->searchKillers[1][pos->ply - 2] == move) {
 		list->moves[list->count].score = 600000;
 	}  else {
-		list->moves[list->count].score = pos->searchHistory[pos->pieces[FROMSQ(move)]][TOSQ(move)];
+		list->moves[list->count].score = MIN(pos->searchHistory[pos->pieces[FROMSQ(move)]][TOSQ(move)], 500000);
 	}
 	list->count++;
 }
