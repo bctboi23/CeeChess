@@ -4,18 +4,21 @@ Hi! I am a bot written in C, heavily inspired by the Vice engine and video serie
 **Rating:**
 The rating for the latest release of the engine (v1.3.2) should be around ~2330 CCRL, which compares to around 2500 FIDE classical rating.
 
-Estimated ratings for all versions:
+Self play ratings for all versions, anchored at SeeChess 1.0 (1.4 is the newest version):
+(note, self-play tests were conducted at low time controls, and elo may be inflated in comparison to play against a gauntlet variety of engines. If I had to guess, CeeChess 1.4 will likely land ~2400 elo CCRL)
 ```
 Rank      Name             Elo
- 1    CeeChess-v1.3.2  :  ~2330
- 2    CeeChess-v1.3.1  :  ~2315
- 3    CeeChess-v1.3    :  ~2310
- 4    SeeChess-v1.2    :  ~2200
- 5    SeeChess-v1.1.3  :  ~2180
- 6    SeeChess-v1.1.2  :  ~2165
- 7    SeeChess-v1.1.1  :  ~2150
- 8    SeeChess-v1.1    :  ~2140
- 9    SeeChess-v1.0    :  ~2060
+ 1    CeeChess-v1.4    :  ~2470
+ 2    CeeChess-v1.3.2  :  ~2330
+ 3    CeeChess-v1.3.2  :  ~2330
+ 4    CeeChess-v1.3.1  :  ~2315
+ 5    CeeChess-v1.3    :  ~2310
+ 6    SeeChess-v1.2    :  ~2200
+ 7    SeeChess-v1.1.3  :  ~2180
+ 8    SeeChess-v1.1.2  :  ~2165
+ 9    SeeChess-v1.1.1  :  ~2150
+10    SeeChess-v1.1    :  ~2140
+11    SeeChess-v1.0    :  ~2060
 ```
 
 # Engine Features
