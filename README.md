@@ -53,6 +53,7 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 - Open file heuristics (for Rook and Queen)
 - King Safety (King Tropism, weighted by the number pieces left on the board + attack bonuses for semi-open files near the king)
 - Tapered evaluation
+- Logistic Regression Tuning (Texel method) using Simulated Annealing + Local Search, with Pseudohuber loss
 
 **Planned Improvements (ordered by perceived feasibility):**
 - Syzygy Tablebases
