@@ -20,7 +20,7 @@ Rank      Name             Elo
 10    SeeChess-v1.1    :  ~2140
 11    SeeChess-v1.0    :  ~2060
 ```
-Most recent gauntlet with an assortment of engines:
+Most recent gauntlet with an assortment of engines:   
 Time Control: (1 min, 0.5sec inc), with elo centered around the v1.4 release (ratings from bayeselo):
 | Rank | Name                      | Elo  |  +  |  -  | Games | Score | Oppo. | Draws |
 |------|---------------------------|------|-----|-----|-------|-------|-------|-------|
