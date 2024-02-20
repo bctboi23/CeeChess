@@ -8,7 +8,7 @@ Self play ratings for all versions, anchored at SeeChess 1.0 (1.4 is the newest 
 (note, self-play tests were conducted at low time controls, and elo may be inflated in comparison to play against a gauntlet variety of engines. If I had to guess, CeeChess 1.4 will likely land ~2400 elo CCRL)
 ```
 Rank      Name             Elo
- 1    CeeChess-v1.4    :  ~2470
+ 1    CeeChess-v1.4    :  ~2480
  2    CeeChess-v1.3.2  :  ~2330
  3    CeeChess-v1.3.2  :  ~2330
  4    CeeChess-v1.3.1  :  ~2315
