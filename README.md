@@ -3,9 +3,6 @@ Hi! I am a bot written in C, heavily inspired by the Vice engine and video serie
 
 **Rating:**
 The rating for the latest release of the engine (v1.4), scores ~150 elo better in self-play to v1.3.2, and should play at ~2300 CCRL (since self-play inflates ratings). This compares roughly to FIDE 2500, although there is no real 1-1 correspondence between these rating systems.
-After the v1.4 release, I will likely either:   
-1. convert the evaluation function into a custom MLP to mess around with more of the constructed datasets I have on the backend with a likely better evaluation.   
-2. rewrite the engine from the ground to use bitboards (likely magic bitboard move generation), as bitboards come with a variety of perks when creating more evaluation features like mobility and more robust king safety that are computationally hard to replicate in a mailbox engine without having bitboards on hand, making the evaulation unreasonably slow.
 
 Self play ratings for all versions, anchored at SeeChess 1.0 (1.4 is the newest version):   
 (note, self-play tests were conducted at low time controls, and elo may be inflated in comparison to play against a gauntlet variety of engines. If I had to guess, CeeChess 1.4 will likely land ~2400 elo CCRL)
@@ -37,6 +34,12 @@ Gauntlet run for test ratings (1 min, 0.5sec inc), with elo centered around the 
    ...
    
 Since CCRL ratings got adjusted down recently (stockfish went from 3900 CCRL to ~3630 afaik), this no longer breaks the CCRL 2400 barrier, but comparing the results here to the old ratings of Barbarossa-0.6.0(2468), Barbarossa-0.5.0(~2375ish i believe?) and the others suggests that this release would have broken that barrier. I now expect the engine to land in the range of 2300-2350, given Barbarossa-0.6.0 has a new rating of 2355
+
+**Next Steps:**
+After the v1.4 release, I will likely either:   
+1. convert the evaluation function into a custom MLP to mess around with more of the constructed datasets I have on the backend with a likely better evaluation.   
+2. rewrite the engine from the ground to use bitboards (likely magic bitboard move generation), as bitboards come with a variety of perks when creating more evaluation features like mobility and more robust king safety that are computationally hard to replicate in a mailbox engine without having bitboards on hand, making the evaulation unreasonably slow.
+
 # Engine Features
 
 **Search:**
