@@ -2,7 +2,7 @@
 Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! If you want to try your hand at facing me, I am occasionally on lichess at https://lichess.org/@/seeChessBot! I will be moving to a fly.io app soon as well!
 
 **Rating:**
-The rating for the latest release of the engine (v1.4), scores ~150 elo better in self-play to v1.3.2, and should play at ~2400 CCRL (since self-play inflates ratings). This compares roughly to FIDE 2500, although there is no real 1-1 correspondence between these rating systems
+The rating for the latest release of the engine (v1.4), scores ~150 elo better in self-play to v1.3.2, and should play at ~2300 CCRL (since self-play inflates ratings). This compares roughly to FIDE 2500, although there is no real 1-1 correspondence between these rating systems.
 After the v1.4 release, I will likely either:   
 1. convert the evaluation function into a custom MLP to mess around with more of the constructed datasets I have on the backend with a likely better evaluation.   
 2. rewrite the engine from the ground to use bitboards (likely magic bitboard move generation), as bitboards come with a variety of perks when creating more evaluation features like mobility and more robust king safety that are computationally hard to replicate in a mailbox engine without having bitboards on hand, making the evaulation unreasonably slow.
@@ -23,7 +23,20 @@ Rank      Name             Elo
 10    SeeChess-v1.1    :  ~2140
 11    SeeChess-v1.0    :  ~2060
 ```
+Most recent gauntlet with an assortment of engines:
 
+Gauntlet run for test ratings (1 min, 0.5sec inc), with elo centered around the v1.4 release (ratings from bayeselo):
+| Rank | Name                      | Elo  |  +  |  -  | Games | Score | Oppo. | Draws |
+|------|---------------------------|------|-----|-----|-------|-------|-------|-------|
+|   1  | Barbarossa-0.6.0         | 38  |  34 |  33 |  240  |  55%  |   95  |  23%  |
+|   2  | CeeChess-v1.4    |  0  |  13 |  13 | 1664  |  65%  |  -13  |  26%  |
+|   3  | Barbarossa-0.5.0-win10-64|  -34  |  33 |  33 |  240  |  45%  |   95  |  28%  |
+|   4  | Kingfisher.v1.1.1        | -107  |  32 |  33 |  240  |  34%  |   95  |  36%  |
+|   5  | gopher_check             | -146  |  34 |  35 |  238  |  29%  |   95  |  26%  |
+|   6  | CeeChess 1.3.2           | -149  |  34 |  36 |  238  |  29%  |   95  |  25%  |
+   ...
+   
+Since CCRL ratings got adjusted down recently (stockfish went from 3900 CCRL to ~3630 afaik), this no longer breaks the CCRL 2400 barrier, but comparing the results here to the old ratings of Barbarossa-0.6.0(2468), Barbarossa-0.5.0(~2375ish i believe?) and the others suggests that this release would have broken that barrier. I now expect the engine to land in the range of 2300-2350, given Barbarossa-0.6.0 has a new rating of 2355
 # Engine Features
 
 **Search:**
