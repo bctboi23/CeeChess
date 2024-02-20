@@ -21,8 +21,7 @@ Rank      Name             Elo
 11    SeeChess-v1.0    :  ~2060
 ```
 Most recent gauntlet with an assortment of engines:
-
-Gauntlet run for test ratings (1 min, 0.5sec inc), with elo centered around the v1.4 release (ratings from bayeselo):
+Time Control: (1 min, 0.5sec inc), with elo centered around the v1.4 release (ratings from bayeselo):
 | Rank | Name                      | Elo  |  +  |  -  | Games | Score | Oppo. | Draws |
 |------|---------------------------|------|-----|-----|-------|-------|-------|-------|
 |   1  | Barbarossa-0.6.0         | 38  |  34 |  33 |  240  |  55%  |   95  |  23%  |
