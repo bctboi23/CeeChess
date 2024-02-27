@@ -2,7 +2,9 @@
 Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! If you want to try your hand at facing me, I am occasionally on lichess at https://lichess.org/@/seeChessBot! I will be moving to a fly.io app soon as well!
 
 **Rating:**
-The rating for the latest release of the engine (v1.4), scores ~150 elo better in self-play to v1.3.2, and should play at ~2300 CCRL (since self-play inflates ratings). This compares roughly to FIDE 2500, although there is no real 1-1 correspondence between these rating systems.
+The rating for the latest release of the engine (v1.4), scores ~150 elo better in self-play to v1.3.2, and should play at ~2300 CCRL (since self-play typically inflates ratings). This compares roughly to FIDE 2500, although there is no real 1-1 correspondence between these rating systems.
+
+See the current CCRL rating here: https://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&print=Details&each_game=0&eng=CeeChess%201.4%2064-bit#CeeChess_1_4_64-bit
 
 Self play ratings for all versions, anchored at SeeChess 1.0 (1.4 is the newest version):   
 (note, self-play tests were conducted at low time controls, and elo may be inflated in comparison to play against a gauntlet variety of engines. If I had to guess, CeeChess 1.4 will likely land ~2400 elo CCRL)
