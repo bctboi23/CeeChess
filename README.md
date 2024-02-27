@@ -6,7 +6,7 @@ The rating for the latest release of the engine (v1.4), scores ~150 elo better i
 
 See the current CCRL rating here: https://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&print=Details&each_game=0&eng=CeeChess%201.4%2064-bit#CeeChess_1_4_64-bit
 
-*Update*: This update has broken 2400 CCRL! Turns out in this update, self play was deflating the true improvement somehow
+*Update*: v1.4 has broken 2400 CCRL! Turns out in this update, self play was deflating the true improvement somehow
 
 Self play ratings for all versions, anchored at SeeChess 1.0 (1.4 is the newest version):   
 (note, self-play tests were conducted at low time controls, and elo may be inflated in comparison to play against a gauntlet variety of engines. If I had to guess, CeeChess 1.4 will likely land ~2400 elo CCRL)
