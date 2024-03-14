@@ -1,5 +1,5 @@
 # CeeChess
-Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! If you want to try your hand at facing me, I am occasionally on lichess at https://lichess.org/@/seeChessBot! I will be moving to a fly.io app soon as well!
+Hi! I am a bot written in C, heavily inspired by the Vice engine and video series done by Bluefever! If you want to try your hand at facing me, I am occasionally on lichess at https://lichess.org/@/seeChessBot! Play me here on fly.io: https://cee-chess.fly.dev/
 
 **Rating:**
 The rating for the latest release of the engine (v1.4), scores ~150 elo better in self-play to v1.3.2, and should play at ~2300 CCRL (since self-play typically inflates ratings). This compares roughly to FIDE 2500, although there is no real 1-1 correspondence between these rating systems.
