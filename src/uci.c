@@ -1,10 +1,14 @@
 // uci.c
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "stdio.h"
-#include "defs.h"
-#include "string.h"
-
-#define INPUTBUFFER 400 * 6
+#include "uci.h"
+#include "move.h"
+#include "io.h"
+#include "search.h"
+#include "validate.h"
+#include "misc.h"
 
 // go depth 6 wtime 180000 btime 100000 binc 1000 winc 1000 movetime 1000 movestogo 40
 void ParseGo(char* line, S_SEARCHINFO *info, S_BOARD *pos, S_HASHTABLE *table) {
@@ -117,7 +121,7 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 	char line[INPUTBUFFER];
   printf("id name %s\n",NAME);
   printf("id author Bctboi23\n");
-	printf("option name Hash type spin default 256 min 4 max %d\n",MAX_HASH);
+	printf("option name Hash type spin default 4 min 4 max %d\n",MAX_HASH);
   printf("uciok\n\n");
 
 	int MB = 256;

@@ -3,7 +3,10 @@
 
 CC = gcc
 CFLAGS = -O3 -s -Wall
+#CFLAGS = -O3 -g -pg -no-pie # use these compile flags if profiling with gprof
+CFLAGS = -O3 -s -Wall -fopenmp # use these compile flags if tuning eval and have ability to use OpenMP
 LDFLAGS = -lm
+VERSION = CeeChess-v2.0
 
 # windows requires backslash
 ifeq ($(OS),Windows_NT)
@@ -11,14 +14,14 @@ ifeq ($(OS),Windows_NT)
 	EXE_EXTENSION = .exe
 	SRC_DIR = .\src
 	BIN_DIR = .\bin
-	TARGET = $(BIN_DIR)\CeeChess-v1.4
+	TARGET = $(BIN_DIR)\$(VERSION)
 else
 	RM = rm -rf
 	EXE_EXTENSION = -linux 
 	CFLAGS += -D LINUX
 	SRC_DIR = ./src
 	BIN_DIR = ./bin
-	TARGET = $(BIN_DIR)/CeeChess-v1.4
+	TARGET = $(BIN_DIR)/$(VERSION)
 endif
 
 # Automatically discover all source and header files in the ./src directory

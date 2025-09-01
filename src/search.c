@@ -1,14 +1,24 @@
 // search.c
 
-#include "stdio.h"
-#include "defs.h"
-#include "math.h"
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "search.h"
+#include "move.h"
+#include "attack.h"
+#include "movegen.h"
+#include "evaluate.h"
+#include "io.h"
+#include "debug.h"
+#include "misc.h"
+#include "eval-tuned.h"
 
 // Null Move Pruning Values
 static const int R = 2;
 static const int minDepth = 3;
 
-// Razoring Values
+// Razoring Values 
 static const int RazorDepth = 2;
 static const int RazorMargin[3] = {0, 200, 400};
 
@@ -22,7 +32,7 @@ static const int RevFutilityMargin = 200;
 
 // LMR Values
 static const int LateMoveDepth = 3;
-static const int FullSearchMoves = 2;
+static const int FullSearchMoves = 1;
 int LMRTable[64][64];
 
 void InitSearch() {
@@ -94,6 +104,10 @@ static void ClearForSearch(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
 		}
 	}
 
+	for (index = 0; index < MAXDEPTH; ++index) {
+		pos->evalStack[index] = 0;
+	}
+
 	table->overWrite=0;
 	table->hit=0;
 	table->cut=0;
@@ -121,7 +135,7 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 	}
 
 	if(pos->ply > MAXDEPTH - 1) {
-		return EvalPosition(pos);
+		return EvalPosition(pos, curr_params);
 	}
 
 	// Mate Distance Pruning
@@ -131,7 +145,7 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 		return alpha;
 	}
 
-	int Score = EvalPosition(pos);
+	int Score = EvalPosition(pos, curr_params);
 
 	ASSERT(Score>-INFINITE && Score<INFINITE);
 
@@ -179,7 +193,7 @@ static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
 		}
     }
 
-	ASSERT(alpha >= OldAlpha);
+	// ASSERT(alpha >= OldAlpha);
 
 	return alpha;
 }
@@ -191,9 +205,11 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	ASSERT(depth>=0);
 
 	int InCheck = SqAttacked(pos->KingSq[pos->side],pos->side^1,pos);
+	int isPv = (alpha != beta - 1);
+	int rootNode = (pos->ply == 0);
 
 	// Check Extension (Extend all checks before dropping into Quiescence)
-	if(InCheck) {
+	if (!rootNode && InCheck) {
 		depth++;
 	}
 
@@ -208,33 +224,41 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	info->nodes++;
 
+	// check for draws
 	if((IsRepetition(pos) || pos->fiftyMove >= 100) && pos->ply) {
 		return 0;
 	}
 
 	if(pos->ply > MAXDEPTH - 1) {
-		return EvalPosition(pos);
+		return EvalPosition(pos, curr_params);
 	}
 
 	// Mate Distance Pruning (finds mates more quickly)
 	alpha = MAX(alpha, -INFINITE + pos->ply);
-	beta = MIN(beta, INFINITE - pos->ply);
+	beta = MIN(beta, INFINITE - pos->ply); 
 	if (alpha >= beta) {
 		return alpha;
 	}
 
 	int Score = -INFINITE;
 	int PvMove = NOMOVE;
+	int ttDepth = 0;
 
-	if( ProbeHashEntry(pos, table, &PvMove, &Score, alpha, beta, depth) == TRUE ) {
+	int probeHash = ProbeHashEntry(pos, table, &PvMove, &Score, &ttDepth, alpha, beta, depth);
+	if(!isPv && probeHash == TRUE && pos->fiftyMove < 90) {
 		table->cut++;
 		return Score;
 	}
 
-	int positionEval = EvalPosition(pos);
+	int positionEval = EvalPosition(pos, curr_params);
+	pos->evalStack[pos->ply] = InCheck ? INFINITE : positionEval; // don't save evaluation when in check
+
+	int improving = (pos->ply >= 2 && 
+					!InCheck && 
+					pos->evalStack[pos->ply - 2] < positionEval);
 
 	// Razoring (prunes near alpha)
-	if (depth <= RazorDepth && !PvMove && !InCheck && positionEval + RazorMargin[depth] <= alpha) {
+	if (depth <= RazorDepth && !isPv && !InCheck && positionEval + RazorMargin[depth] <= alpha) {
 		// drop into qSearch if move most likely won't beat alpha
 		Score = Quiescence(alpha - RazorMargin[depth], beta + RazorMargin[depth], pos, info);
 		if (Score + RazorMargin[depth] <= alpha) {
@@ -243,12 +267,12 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 	}
 
 	// Reverse Futility Pruning (prunes near beta)
-	if (depth <= RevFutilityDepth && !PvMove && !InCheck && abs(beta) < ISMATE && positionEval - (RevFutilityMargin * depth) >= beta) {
-		return positionEval - (RevFutilityMargin * depth);
+	if (depth <= RevFutilityDepth && !isPv && !InCheck && abs(beta) < ISMATE && positionEval - (RevFutilityMargin * depth) >= beta) {
+		return positionEval - (RevFutilityMargin * (depth - improving));
 	}
 
 	// Null Move Pruning
-	if(depth >= minDepth && DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0) && positionEval >= beta) {
+	if(!isPv && depth >= minDepth && DoNull && !InCheck && pos->ply && (pos->bigPce[pos->side] > 0) && positionEval >= beta) {
 		MakeNullMove(pos);
 		Score = -AlphaBeta( -beta, -beta + 1, depth - 1 - R, pos, info, FALSE, FALSE, table);
 		TakeNullMove(pos);
@@ -274,6 +298,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	Score = -INFINITE;
 
+	// If the hash table found a move but couldn't directly cut, we search it first
 	if( PvMove != NOMOVE) {
 		for(MoveNum = 0; MoveNum < list->count; ++MoveNum) {
 			if( list->moves[MoveNum].move == PvMove) {
@@ -284,10 +309,18 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		}
 	}
 
+	// if the hash table has no move, or the move found has a depth much lower than current depth, we reduce the search depth (IIR)
+	if (depth >= 4 && (!PvMove || ttDepth + 4 <= depth))
+        --depth;
+
 	int FoundPv = FALSE;
 
 	// Futility Pruning flag (if node is futile (unlikely to raise alpha), this flag is set)
-	int FutileNode = (depth <= FutilityDepth && positionEval + (FutilityMargin * depth) <= alpha && abs(Score) < ISMATE && (pos->bigPce[pos->side] > 0)) ? 1 : 0;
+	int FutileNode = (!isPv && 
+					depth <= FutilityDepth && 
+					positionEval + (FutilityMargin * (depth - improving)) <= alpha && 
+					abs(Score) < ISMATE && 
+					(pos->bigPce[pos->side] > 0));
 
 	for(MoveNum = 0; MoveNum < list->count; ++MoveNum) {
 
@@ -300,9 +333,9 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 		// Futility Pruning (if node is considered futile, and at least 1 legal move has been searched, don't search any more quiet moves in the position)
 		int isMoveCheck = SqAttacked(pos->KingSq[pos->side^1],pos->side,pos);
-		int nonCapture = !(list->moves[MoveNum].move & MFLAGCAP);
-		int isQuiet = (nonCapture && !(list->moves[MoveNum].move & MFLAGPROM) && !isMoveCheck);
-		if (Legal && FutileNode && isQuiet) {
+		int nonCaptureProm = !(list->moves[MoveNum].move & MFLAGCAP) && !(list->moves[MoveNum].move & MFLAGPROM);
+		int isQuiet = (nonCaptureProm && !isMoveCheck);
+		if (Legal && FutileNode && isQuiet && abs(Score) < ISMATE) { // ) {
 			continue;
 		}
 
@@ -327,8 +360,11 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 					(list->moves[MoveNum].move == pos->searchKillers[1][pos->ply])
 				) reduce--;
 
+				// reduce more if we are not in the PV and/or not improving
+				reduce += !isPv + !improving;
+
 				// do not fall directly into quiescence search
-				reduce = MIN(depth - 1, MAX(reduce, 1));
+				reduce = CLAMP(reduce, 1, depth - 1);
 
 				// print reduction depth at move number
 				// printf("reduction: %d depth: %d moveNum: %d\n", (reduce - 1), depth, Legal);
@@ -366,7 +402,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 					info->fhf++;
 				}
 				info->fh++;
-				if (nonCapture) {
+				if (nonCaptureProm) {
 					if ((pos->searchKillers[0][pos->ply] != list->moves[MoveNum].move)) {
 						pos->searchKillers[1][pos->ply] = pos->searchKillers[0][pos->ply];
 						pos->searchKillers[0][pos->ply] = list->moves[MoveNum].move;
@@ -377,7 +413,12 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 			}
 			FoundPv = TRUE;
 			alpha = Score;
-			if (nonCapture) {
+			if (nonCaptureProm) {
+				// possible new history formula
+				/*
+				int bonus = MIN(depth * depth, 128);
+				pos->searchHistory[pos->pieces[FROMSQ(BestMove)]][TOSQ(BestMove)] += bonus - pos->searchHistory[pos->pieces[FROMSQ(BestMove)]][TOSQ(BestMove)] * bonus / 4096;
+				*/
 				pos->searchHistory[pos->pieces[FROMSQ(BestMove)]][TOSQ(BestMove)] += depth;
 			}
 		}
@@ -389,6 +430,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	ASSERT(alpha>=OldAlpha);
 
+	// store in hash table
 	if(alpha != OldAlpha) {
 		StoreHashEntry(pos, table, BestMove, BestScore, HFEXACT, depth);
 	} else {
@@ -438,7 +480,7 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 				bestScore,currentDepth,info->nodes,GetTimeMs()-info->starttime);
 		}
 		if(info->GAME_MODE == UCIMODE || info->POST_THINKING == TRUE) {
-			if(!info->GAME_MODE == XBOARDMODE) {
+			if((!info->GAME_MODE) == XBOARDMODE) {
 				printf("pv");
 			}
 			for(pvNum = 0; pvNum < pvMoves; ++pvNum) {
