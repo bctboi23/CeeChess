@@ -7,7 +7,7 @@
 
 #define INPUTBUFFER 400 * 6
 
-#define NAME "CeeChess_v1.4"
+#define NAME "CeeChess_v2.0"
 
 extern void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 

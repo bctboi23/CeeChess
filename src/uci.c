@@ -124,7 +124,7 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 	printf("option name Hash type spin default 4 min 4 max %d\n",MAX_HASH);
   printf("uciok\n\n");
 
-	int MB = 256;
+	int MB = 4;
 
 	while (TRUE) {
 		memset(&line[0], 0, sizeof(line));
