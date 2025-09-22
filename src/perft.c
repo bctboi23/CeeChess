@@ -76,7 +76,7 @@ void PerftTest(int depth, S_BOARD *pos) {
 int PerftTestEPD(char *epd_file_path, S_BOARD *pos) {
 
 
-    FILE *epd = fopen(epd_file_path, "r");   /* read mode */
+    FILE *epd = fopen(epd_file_path, "r");
     if (epd == NULL) {
         perror("fopen");
         return 1;
