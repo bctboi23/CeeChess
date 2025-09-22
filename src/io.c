@@ -1,7 +1,10 @@
 // io.c
 
-#include "stdio.h"
-#include "defs.h"
+#include <stdio.h>
+
+#include "io.h"
+#include "movegen.h"
+#include "debug.h"
 
 char *PrSq(const int sq) {
 
@@ -10,7 +13,7 @@ char *PrSq(const int sq) {
 	int file = FilesBrd[sq];
 	int rank = RanksBrd[sq];
 
-	sprintf(SqStr, "%c%c", ('a'+file), ('1'+rank));
+	snprintf(SqStr, 3, "%c%c", ('a'+file), ('1'+rank));
 
 	return SqStr;
 
@@ -36,9 +39,9 @@ char *PrMove(const int move) {
 		} else if(!IsRQ(promoted) && IsBQ(promoted))  {
 			pchar = 'b';
 		}
-		sprintf(MvStr, "%c%c%c%c%c", ('a'+ff), ('1'+rf), ('a'+ft), ('1'+rt), pchar);
+		snprintf(MvStr, 6, "%c%c%c%c%c", ('a'+ff), ('1'+rf), ('a'+ft), ('1'+rt), pchar);
 	} else {
-		sprintf(MvStr, "%c%c%c%c", ('a'+ff), ('1'+rf), ('a'+ft), ('1'+rt));
+		snprintf(MvStr, 5, "%c%c%c%c", ('a'+ff), ('1'+rf), ('a'+ft), ('1'+rt));
 	}
 
 	return MvStr;

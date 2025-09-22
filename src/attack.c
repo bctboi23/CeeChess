@@ -1,90 +1,60 @@
 // attack.c
+#include "attack.h"
+#include "bitboards.h"
+#include "debug.h"
 
-#include "stdio.h"
-#include "defs.h"
-
-const int KnDir[8] = { -8, -19,	-21, -12, 8, 19, 21, 12 };
-const int RkDir[4] = { -1, -10,	1, 10 };
-const int BiDir[4] = { -9, -11, 11, 9 };
-const int KiDir[8] = { -1, -10,	1, 10, -9, -11, 11, 9 };
-
-int SqAttacked(const int sq, const int side, const S_BOARD *pos) {
-
-	int pce,index,t_sq,dir;
+// checks if a square is attacked, so can exit early
+int inline SqAttacked(const int sq, const int side, const S_BOARD *pos) {
 	
-	ASSERT(SqOnBoard(sq));
+	ASSERT(SqOnBoard(sq)); 
 	ASSERT(SideValid(side));
 	ASSERT(CheckBoard(pos));
-	
-	// pawns
-	if(side == WHITE) {
-		if(pos->pieces[sq-11] == wP || pos->pieces[sq-9] == wP) {
-			return TRUE;
-		}
-	} else {
-		if(pos->pieces[sq+11] == bP || pos->pieces[sq+9] == bP) {
-			return TRUE;
-		}	
+
+	int side_idx = side * 6 - 1; // this indexes to the correct side in the bitboards in piece_bbs
+	// pawns are weird because they matter by side
+	if (pawnAttackTable[side ^ 1][sq] & pos->piece_bbs[side_idx + wP]) {
+		return TRUE;
 	}
-	
-	// knights
-	for(index = 0; index < 8; ++index) {		
-		pce = pos->pieces[sq + KnDir[index]];
-		ASSERT(PceValidEmptyOffbrd(pce));
-		if(pce != OFFBOARD && IsKn(pce) && PieceCol[pce]==side) {
-			return TRUE;
-		}
+
+	// knights 
+	if (nonSliderMoveTable[0][sq] & pos->piece_bbs[side_idx + wN]) {
+		return TRUE;
 	}
-	
+
 	// rooks, queens
-	for(index = 0; index < 4; ++index) {		
-		dir = RkDir[index];
-		t_sq = sq + dir;
-		ASSERT(SqIs120(t_sq));
-		pce = pos->pieces[t_sq];
-		ASSERT(PceValidEmptyOffbrd(pce));
-		while(pce != OFFBOARD) {
-			if(pce != EMPTY) {
-				if(IsRQ(pce) && PieceCol[pce] == side) {
-					return TRUE;
-				}
-				break;
-			}
-			t_sq += dir;
-			ASSERT(SqIs120(t_sq));
-			pce = pos->pieces[t_sq];
-		}
+	if (getRookAttacks(sq, pos->color_bbs[BOTH]) & (pos->piece_bbs[side_idx + wR] | pos->piece_bbs[side_idx + wQ])) {
+		return TRUE;
 	}
-	
+
 	// bishops, queens
-	for(index = 0; index < 4; ++index) {		
-		dir = BiDir[index];
-		t_sq = sq + dir;
-		ASSERT(SqIs120(t_sq));
-		pce = pos->pieces[t_sq];
-		ASSERT(PceValidEmptyOffbrd(pce));
-		while(pce != OFFBOARD) {
-			if(pce != EMPTY) {
-				if(IsBQ(pce) && PieceCol[pce] == side) {
-					return TRUE;
-				}
-				break;
-			}
-			t_sq += dir;
-			ASSERT(SqIs120(t_sq));
-			pce = pos->pieces[t_sq];
-		}
+	if (getBishopAttacks(sq, pos->color_bbs[BOTH]) & (pos->piece_bbs[side_idx + wB] | pos->piece_bbs[side_idx + wQ])) {
+		return TRUE;
 	}
-	
+
 	// kings
-	for(index = 0; index < 8; ++index) {		
-		pce = pos->pieces[sq + KiDir[index]];
-		ASSERT(PceValidEmptyOffbrd(pce));
-		if(pce != OFFBOARD && IsKi(pce) && PieceCol[pce]==side) {
-			return TRUE;
-		}
+	if (nonSliderMoveTable[1][sq] & pos->piece_bbs[side_idx + wK]) {
+		return TRUE;
 	}
-	
+
 	return FALSE;
+}
+
+// gets all pieces that attack a square, as a bitboard
+U64 inline getAttacks(const int sq, const int side, const S_BOARD *pos) {
 	
+	ASSERT(SqOnBoard(sq)); 
+	ASSERT(SideValid(side));
+	ASSERT(CheckBoard(pos));
+
+	int side_idx = side * 6 - 1; // this indexes to the correct side in the bitboards in piece_bbs
+	return (pawnAttackTable[side ^ 1][sq] & pos->piece_bbs[side_idx + wP]) |
+		   (nonSliderMoveTable[0][sq] & pos->piece_bbs[side_idx + wN]) |
+		   (getRookAttacks(sq, pos->color_bbs[BOTH]) & (pos->piece_bbs[side_idx + wR] | pos->piece_bbs[side_idx + wQ])) |
+		   (getBishopAttacks(sq, pos->color_bbs[BOTH]) & (pos->piece_bbs[side_idx + wB] | pos->piece_bbs[side_idx + wQ])) |
+		   (nonSliderMoveTable[1][sq] & pos->piece_bbs[side_idx + wK]);
+}
+
+// get the span of attacks that pawns could reach from a given square
+inline U64 getPawnAttackSpan(int sq, int color) {
+    return ForwardRanksMasks[color][ROW(sq)] & AdjacentFilesMask[COL(sq)];
 }

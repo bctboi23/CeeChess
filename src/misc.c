@@ -1,17 +1,23 @@
 // misc.c
 
-#include "stdio.h"
-#include "defs.h"
-#include "unistd.h"
+#include <stdio.h>
+#include <unistd.h>
+
+#include "misc.h"
+#include "search.h"
 
 #ifdef WIN32
 #include "windows.h"
 #else
 #include "sys/time.h"
 #include "sys/select.h"
-#include "unistd.h"
 #include "string.h"
 #endif
+
+char PceChar[] = ".PNBRQKpnbrqk";
+char SideChar[] = "wb-";
+char RankChar[] = "12345678";
+char FileChar[] = "abcdefgh";
 
 int GetTimeMs() {
 #ifdef WIN32
@@ -25,7 +31,7 @@ int GetTimeMs() {
 
 
 // http://home.arcor.de/dreamlike/chess/
-int InputWaiting()
+static int InputWaiting()
 {
 #ifndef WIN32
   fd_set readfds;

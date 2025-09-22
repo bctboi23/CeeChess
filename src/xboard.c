@@ -1,8 +1,21 @@
 // xboard.c
 
-#include "stdio.h"
-#include "defs.h"
-#include "string.h"
+#include <stdio.h>
+#include <string.h>
+
+#include "xboard.h"
+#include "attack.h"
+#include "movegen.h"
+#include "io.h"
+#include "validate.h"
+#include "search.h"
+#include "perft.h"
+#include "evaluate.h"
+#include "tuning.h"
+#include "debug.h"
+#include "misc.h"
+#include "tuning.h"
+
 
 int ThreeFoldRep(const S_BOARD *pos) {
 
@@ -248,7 +261,7 @@ void XBoard_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 
 void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 
-	printf("Welcome to seeChess In Console Mode!\n");
+	printf("Welcome to CeeChess In Console Mode!\n");
 	printf("Type help for commands\n\n");
 
 	info->GAME_MODE = CONSOLEMODE;
@@ -305,6 +318,7 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 			printf("view - show current depth and movetime settings\n");
 			printf("setboard x - set position to fen x\n");
 			printf("perft x - do perft to depth x on current position\n");
+			printf("see - check the static exchange evaluation for all captures in the position\n");
 			printf("tune <input_file> <output_file> <log_file> <use_tanh> - tune parameters on an input file, showing final output in output file and all iterations in log file\n");
 			printf("** note ** - to reset time and depth, set to 0\n");
 			printf("enter moves using b7b8q notation\n\n\n");
@@ -320,10 +334,13 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 		if(!strcmp(command, "eval")) {
 			engineSide = BOTH;
 			PrintBoard(pos);
-			printf("Eval:%d",EvalPosition(pos));
+			S_BOARD_TUNE tune_pos[1];
+			ParseFenTunable(START_FEN, tune_pos, curr_params);
+			printf("Eval:%d - ", EvalPositionTunable(tune_pos, curr_params));
+			printf("Eval:%d", EvalPosition(pos, curr_params));
 			MirrorBoard(pos);
 			PrintBoard(pos);
-			printf("Eval:%d",EvalPosition(pos));
+			printf("Eval:%d", EvalPosition(pos, curr_params));
 			continue;
 		}
 
@@ -334,18 +351,28 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 		}
 
 		if (!strcmp(command, "perft")) {
+			engineSide = BOTH;
 			sscanf(inBuf, "perft %d", &depth);
 			PerftTest(depth, pos);
 			continue;
 		}
 
-		if (!strcmp(command, "tune")) {
-			char fileIn[256];
-			char fileOut[256];
-			char fileLog[256];
+		if (!strcmp(command, "perft-epd")) {
+			engineSide = BOTH;
+			char fileIn[69];
+			sscanf(inBuf, "perft-epd %s", fileIn);
+			PerftTestEPD(fileIn, pos);
+			continue;
+		}
+
+		if (!strcmp(command, "spsa")) {
+			engineSide = BOTH;
+			char fileIn[69];
+			char fileOut[69];
+			int batch_size = 200000;
 			int use_tanh = 0;
-			sscanf(inBuf, "tune %s %s %s %d", fileIn, fileOut, fileLog, &use_tanh);
-			TuneEval(pos, fileIn, fileOut, fileLog, use_tanh);
+			sscanf(inBuf, "spsa %64s %64s %d %d", fileIn, fileOut, &batch_size, &use_tanh);
+			TuneEvalSPSA(pos, fileIn, fileOut, batch_size, use_tanh);
 			continue;
 		}
 
@@ -405,6 +432,11 @@ void Console_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 
 		if(!strcmp(command, "go")) {
 			engineSide = pos->side;
+			continue;
+		}
+
+		if(!strcmp(command, "see")) {
+			printf("Command not currently implemented:%s\n",inBuf);
 			continue;
 		}
 

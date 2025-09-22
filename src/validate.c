@@ -1,8 +1,14 @@
 // validate.c
+#include <stdio.h>
+#include <string.h>
 
-#include "defs.h"
-#include "stdio.h"
-#include "string.h"
+#include "validate.h"
+#include "attack.h"
+#include "io.h"
+#include "movegen.h"
+#include "evaluate.h"
+#include "search.h"
+#include "misc.h"
 
 int MoveListOk(const S_MOVELIST *list,  const S_BOARD *pos) {
 	if(list->count < 0 || list->count >= MAXPOSITIONMOVES) {
@@ -27,8 +33,8 @@ int MoveListOk(const S_MOVELIST *list,  const S_BOARD *pos) {
 	return TRUE;
 }
 
-int SqIs120(const int sq) {
-	return (sq>=0 && sq<120);
+int SqIs64(const int sq) {
+	return (sq>=0 && sq<64);
 }
 
 int PceValidEmptyOffbrd(const int pce) {
@@ -83,8 +89,6 @@ void DebugAnalysisTest(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
     }
 }
 
-
-
 void MirrorEvalTest(S_BOARD *pos) {
     FILE *file;
     file = fopen("mirror.epd","r");
@@ -98,9 +102,9 @@ void MirrorEvalTest(S_BOARD *pos) {
         while(fgets (lineIn , 1024 , file) != NULL) {
             ParseFen(lineIn, pos);
             positions++;
-            ev1 = EvalPosition(pos);
+            ev1 = EvalPosition(pos, curr_params);
             MirrorBoard(pos);
-            ev2 = EvalPosition(pos);
+            ev2 = EvalPosition(pos, curr_params);
 
             if(ev1 != ev2) {
                 printf("\n\n\n");
@@ -121,4 +125,3 @@ void MirrorEvalTest(S_BOARD *pos) {
         }
     }
 }
-
