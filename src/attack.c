@@ -53,3 +53,8 @@ U64 inline getAttacks(const int sq, const int side, const S_BOARD *pos) {
 		   (getBishopAttacks(sq, pos->color_bbs[BOTH]) & (pos->piece_bbs[side_idx + wB] | pos->piece_bbs[side_idx + wQ])) |
 		   (nonSliderMoveTable[1][sq] & pos->piece_bbs[side_idx + wK]);
 }
+
+// get the span of attacks that pawns could reach from a given square
+inline U64 getPawnAttackSpan(int sq, int color) {
+    return ForwardRanksMasks[color][ROW(sq)] & AdjacentFilesMask[COL(sq)];
+}

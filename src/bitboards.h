@@ -19,6 +19,8 @@ extern U64 ClearMask[64];
 extern U64 FileBBMask[8];
 extern U64 RankBBMask[8];
 
+extern U64 AdjacentFilesMask[8];
+
 extern U64 ForwardRanksMasks[2][8];
 
 extern U64 BlackPassedMask[64];

@@ -17,6 +17,8 @@ typedef struct {
 	int timeset;
 	int movestogo;
 
+	int earlyend;
+
 	int quit;
 	int stopped;
 

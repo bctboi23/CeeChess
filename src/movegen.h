@@ -11,4 +11,4 @@ extern int MoveExists(S_BOARD *pos, const int move);
 
 extern void InitMvvLva();
 
-#endif
+#endif 

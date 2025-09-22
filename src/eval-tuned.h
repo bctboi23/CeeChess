@@ -35,7 +35,7 @@ typedef struct {
 
    int PassedRank[8];
    int PawnCanAdvance[8];
-   int PassedFile[4];
+   int PawnSafeAdvance[8];
    int PassedLeverable;
    int SafePromotionPath;
    int OwnKingPawnTropism;
@@ -47,6 +47,7 @@ typedef struct {
    int KnightAttacker;
    int KnightAttack;
    int KnightCheck;
+   int KnightOutpost;
    int KnightBehindPawn;
 
    // bishops

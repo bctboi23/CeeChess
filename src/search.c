@@ -456,13 +456,13 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 	for( currentDepth = 1; currentDepth <= info->depth; ++currentDepth ) {
 							// alpha	 beta
 		bestScore = AlphaBeta(-INFINITE, INFINITE, currentDepth, pos, info, TRUE, TRUE, table);
+		pvMoves = GetPvLine(currentDepth, pos, table);
+		bestMove = pos->PvArray[0];
 
 		if(info->stopped == TRUE) {
 			break;
 		}
 
-		pvMoves = GetPvLine(currentDepth, pos, table);
-		bestMove = pos->PvArray[0];
 		if(info->GAME_MODE == UCIMODE) {
 			if (abs(bestScore) > ISMATE) {
 				bestScore = (bestScore > 0 ? INFINITE - bestScore + 1 : -INFINITE - bestScore) / 2;
@@ -487,6 +487,12 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 				printf(" %s",PrMove(pos->PvArray[pvNum]));
 			}
 			printf("\n");
+		}
+
+		// end an iteration early if we are unlikely to complete a full depth on the next search
+		if (info->timeset == TRUE && GetTimeMs() > info->earlyend) {
+			info->stopped = TRUE;
+			break;
 		}
 
 		//printf("Hits:%d Overwrite:%d NewWrite:%d Cut:%d\nOrdering %.2f NullCut:%d",table->hit,table->overWrite,table->newWrite,table->cut,

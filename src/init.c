@@ -1,4 +1,5 @@
 // init.c
+#include "attack.h"
 #include "bitboards.h"
 #include "board.h"
 #include "movegen.h"
@@ -30,6 +31,8 @@ int RanksBrd[BRD_SQ_NUM];
 
 U64 FileBBMask[8];
 U64 RankBBMask[8];
+
+U64 AdjacentFilesMask[8];
 
 U64 ForwardRanksMasks[2][8];
 
@@ -65,6 +68,11 @@ void InitEvalMasks() {
             FileBBMask[f] |= (1ULL << sq);
             RankBBMask[r] |= (1ULL << sq);
         }
+	}
+
+	for (f = FILE_A; f <= FILE_H; f++) {
+		AdjacentFilesMask[f] = (f == FILE_A) ? 0ull : FileBBMask[f - 1];
+		AdjacentFilesMask[f] |= (f == FILE_H) ? 0ull : FileBBMask[f + 1];
 	}
 
 	for(sq = 0; sq < 64; ++sq) {
@@ -151,9 +159,9 @@ void InitEvalMasks() {
 	}
 
 	for (int rank = 0; rank < 8; rank++) {
-        for (int i = rank; i < 8; i++)
+        for (int i = rank + 1; i < 8; i++)
             ForwardRanksMasks[WHITE][rank] |= RankBBMask[i];
-        ForwardRanksMasks[BLACK][rank] = ~ForwardRanksMasks[WHITE][rank] | RankBBMask[rank];
+        ForwardRanksMasks[BLACK][rank] = ~ForwardRanksMasks[WHITE][rank] & ~RankBBMask[rank];
     }
 
 	for (int sq = 0; sq < BRD_SQ_NUM; sq++) {
@@ -268,9 +276,4 @@ void AllInit() {
 		initAttackTable(i);
 	}
 	InitSearch();
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 8; j++)
-			printf("%*d ", 3, DistTable[i*8 + j][62]);
-		printf("\n");
-	}
 }

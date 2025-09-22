@@ -63,14 +63,15 @@ void ParseGo(char* line, S_SEARCHINFO *info, S_BOARD *pos, S_HASHTABLE *table) {
 		time /= movestogo;
 		time -= 50;
 		info->stoptime = info->starttime + time + inc;
+		info->earlyend = info->starttime + (time + inc) * 0.75; // if we have already used up 3/4ths of time, we are unlikely to go another depth (BF of this engine is >> 2) 
 	}
 
 	if(depth == -1) {
 		info->depth = MAXDEPTH;
 	}
 
-	printf("time:%d start:%d stop:%d depth:%d timeset:%d\n",
-		time,info->starttime,info->stoptime,info->depth,info->timeset);
+	printf("time:%d start:%d stop:%d depth:%d timeset:%d earlyend: %d\n",
+		time,info->starttime,info->stoptime,info->depth,info->timeset,info->earlyend);
 	SearchPosition(pos, info, table);
 }
 
@@ -108,7 +109,7 @@ void ParsePosition(char* lineIn, S_BOARD *pos) {
               ptrChar++;
         }
     }
-	// PrintBoard(pos);
+	//PrintBoard(pos);
 }
 
 void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
@@ -119,10 +120,10 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
     setbuf(stdout, NULL);
 
 	char line[INPUTBUFFER];
-  printf("id name %s\n",NAME);
-  printf("id author Bctboi23\n");
+	printf("id name %s\n",NAME);
+	printf("id author Bctboi23\n");
 	printf("option name Hash type spin default 4 min 4 max %d\n",MAX_HASH);
-  printf("uciok\n\n");
+	printf("uciok\n\n");
 
 	int MB = 4;
 

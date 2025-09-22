@@ -22,6 +22,7 @@ Stats comparison on the limited vs full represntation:
 */
 
 int PieceType[13] = { 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, };
+double eps = 1e-12;
 
 /* ---- BOARD SETUP FUNCTIONS ---- */
 
@@ -346,7 +347,7 @@ static void printNewParamsToFile(S_EVAL_PARAMS *params, FILE *file) {
 	// passers
 	printNewVals(params->PassedRank, 8, 3, "PassedRank", file);
 	printNewVals(params->PawnCanAdvance, 8, 3, "PawnCanAdvance", file);
-	printNewVals(params->PassedFile, 4, 3, "PassedFile", file);
+	printNewVals(params->PawnSafeAdvance, 8, 3, "PawnSafeAdvance", file);
 	printNewVals(&params->PassedLeverable, 1, 3, "PassedLeverable", file);
 	printNewVals(&params->SafePromotionPath, 1, 3, "SafePromotionPath", file);
 	printNewVals(&params->OwnKingPawnTropism, 1, 3, "OwnKingPawnTropism", file);
@@ -358,6 +359,7 @@ static void printNewParamsToFile(S_EVAL_PARAMS *params, FILE *file) {
 	printNewVals(&params->KnightAttacker, 1, 3, "KnightAttacker", file);
 	printNewVals(&params->KnightAttack, 1, 3, "KnightAttack", file);
 	printNewVals(&params->KnightCheck, 1, 3, "KnightCheck", file);
+	printNewVals(&params->KnightOutpost, 1, 3, "KnightOutpost", file);
 	printNewVals(&params->KnightBehindPawn, 1, 3, "KnightBehindPawn", file);
 
 	// bishops
@@ -518,7 +520,7 @@ double MSELoss(double true_y, double pred_y) {
 }
 
 double BCELoss(double true_y, double pred_y) {
-	return -(true_y * log(pred_y) + (1 - true_y) * log((1 - pred_y)));
+	return -(true_y * log(pred_y + eps) + (1 - true_y) * log((1 - pred_y + eps)));
 }
 
 static double getError(S_BOARD_TUNE *boards, S_EVAL_PARAMS *params, double K, double *scores, int numPos, int posOffset, int *shuffled_indices, int isTanh) {
@@ -539,15 +541,7 @@ static double getError(S_BOARD_TUNE *boards, S_EVAL_PARAMS *params, double K, do
 		int score = EvalPositionTunable(&board, params);
 		double eval = (isTanh) ? tanh((K * score) / 400) : 1 / (1 + pow(10, ((-K * score) / 400)));
 		result = (isTanh) ? 2 * result - 1 : result;
-		// this is incorrect for the stockfish augmented dataset so commented out
-		//double tanhResult = result;
-		// add to error (error is based on pseudo-huber loss, to reduce the power of outliers)
-		// pseudohuber loss
-		error += pseudoHuberLoss(result, eval);
-		// error += (isTanh) ? pseudoHuberLoss(tanhResult, tanh_eval): pseudoHuberLoss(result, sigmoid);
-		//error += BCELoss(result, sigmoid);
-		// binary crossentropy loss
-		//error += -(result * log(clamped_sig) + (1 - result) * log((1 - clamped_sig)));
+		error += MSELoss(result, eval);
 	}
 	return error / numPos;
 }
@@ -660,7 +654,7 @@ void TuneEvalSPSA(S_BOARD *pos, char *fileIn, char *fileOut, int input_batch_siz
 
 	// first tune the K via local search
 	printf("Optimizing K before tuning: \n");
-	double K_adj_val = 0.1;
+	double K_adj_val = 0.01;
 	double last_error = best_error;
 	do {
 		last_error = best_error;

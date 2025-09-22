@@ -5,7 +5,7 @@
 #include "hashtable.h"
 #include "search.h"
 
-#define INPUTBUFFER 400 * 6
+#define INPUTBUFFER 4096
 
 #define NAME "CeeChess_v2.0"
 

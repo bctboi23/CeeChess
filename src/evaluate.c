@@ -9,7 +9,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 typedef struct  {
 	U64 piece_attacks[12];
@@ -34,7 +33,7 @@ U64 black_sqs = 0xaa55aa55aa55aa55;
 // for use in detecting center control
 U64 center_sqs = 0x1818000000;
 
-// for use in complexity evaluation
+// for use in scale evaluation
 U64 left_flank = 0xf0f0f0f0f0f0f0f;
 U64 right_flank = 0xf0f0f0f0f0f0f0f0;
 
@@ -107,9 +106,19 @@ int evalKnights(const S_BOARD *pos, S_EVAL_INFO *info, const S_EVAL_PARAMS *para
 
 	int score = 0;
 	int pce = us * 6 + wN;
+	int our_color_idx = us * 6 - 1;
+	int enemy_color_idx = them * 6 - 1;
+
 	U64 curr_pieces = pos->piece_bbs[pce - 1];
 
+	U64 enemy_pawns = pos->piece_bbs[enemy_color_idx + wP];
 	U64 both_pawns = (pos->piece_bbs[wP - 1] | pos->piece_bbs[bP - 1]);
+
+	U64 OutpostRanks = (us == WHITE ? RankBBMask[RANK_4] | RankBBMask[RANK_5] | RankBBMask[RANK_6]
+                                    : RankBBMask[RANK_5] | RankBBMask[RANK_4] | RankBBMask[RANK_3]);
+
+	// potential outposts are squares on the outpost ranks that are defended by our pawns
+	U64 poentialOutposts = OutpostRanks & info->piece_attacks[our_color_idx + wP];
 
 	for(int i = 0; i < pos->pceNum[pce]; i++) {
 		int sq = POP_LSB(&curr_pieces);
@@ -121,7 +130,7 @@ int evalKnights(const S_BOARD *pos, S_EVAL_INFO *info, const S_EVAL_PARAMS *para
 
 		// mobility
 		U64 attacks = nonSliderMoveTable[0][sq];
-		int move_num = POP_CNT(attacks & info->mobility_sqs[us]);
+		int move_num = POP_CNT(attacks & info->mobility_sqs[us]); 
 		score += params->KnightMobility[move_num];
 
 		// king safety
@@ -130,6 +139,10 @@ int evalKnights(const S_BOARD *pos, S_EVAL_INFO *info, const S_EVAL_PARAMS *para
 			info->attackScore[us] += params->KnightAttack * king_zone_attacks + params->KnightAttacker;
 			info->numAttackers[us]++;
 		}
+
+		// add a bonus for a knight outpost
+		if (CHKBIT(poentialOutposts, sq) && ~(getPawnAttackSpan(sq, us) & enemy_pawns))
+			score += params->KnightOutpost;
 
 		// add a bonus for knights behind a pawn
 		if (CHKBIT(singlePawnPush(both_pawns, 0ull, them), sq))
@@ -196,8 +209,8 @@ int evalBishops(const S_BOARD *pos, S_EVAL_INFO *info, const S_EVAL_PARAMS *para
 		if (CHKBIT(singlePawnPush(both_pawns, 0ull, them), sq))
 			score += params->BishopBehindPawn;
 
-		// add a bonus for bishops that attack both center squares
-		if (several(attacks & center_sqs))
+		// add a bonus for bishops that attack both center squares on the long diagonal
+		if (CHKBIT(~center_sqs, sq) && several(attacks & center_sqs))
 			score += params->BishopLongDiagonal;
 		
 		// add a malus for bishops on the same color squares as any rammed pawns
@@ -449,11 +462,15 @@ int evalPawns(const S_BOARD *pos, S_EVAL_INFO *info, const S_EVAL_PARAMS *params
 			//printf("wP Passed:%s\n",PrSq(sq))
 			
 			// get the base passer score
-			score += params->PassedRank[pawn_relative_row] + params->PassedFile[mirrored_file[pawn_file]];
+			score += params->PassedRank[pawn_relative_row];
 
-			// add a bonus if the pawn can currently advance
-			int pawnCanAdvance = !(pos->color_bbs[BOTH] & singlePawnPush(1ULL << sq, 0ULL, us));
+			// add a bonus if the pawn can currently advance (no pieces)
+			int pawnCanAdvance = !(pos->color_bbs[BOTH] & pawn_push_no_blockers);
 			score += params->PawnCanAdvance[pawn_relative_row] * pawnCanAdvance;
+
+			// add a bonus if pawn can safely advance (no pieces or enemy attacks)
+			int safeAdvance = !((pos->color_bbs[BOTH] | info->color_attacks[them]) & pawn_push_no_blockers);
+			score += params->PawnSafeAdvance[pawn_relative_row] * safeAdvance;
 
 			// add a malus if the pawn is currently leverable
 			score += params->PassedLeverable * (stoppers != 0);
@@ -580,12 +597,11 @@ int evalScale(const S_BOARD *pos, const int eval) {
 	if (!queens && !several(non_queen_pieces & pos->color_bbs[WHITE]) && !several(non_queen_pieces & pos->color_bbs[BLACK]) && pawn_advantage > 2)
         return SCALE_LARGE_PAWN_ADV;
 
-	// if no special case, normal scale when pawns are on both flanks
-	if ((pawns & left_flank) && (pawns & right_flank))
-		return SCALE_NORMAL;
+	// scale down slightly if pawns aren't on both flanks
+	if (!((pawns & left_flank) && (pawns & right_flank)))
+		return SCALE_ONE_FLANK;
 
-	// otherwise, scale based on pawn advantage
-	return 8 * pawn_advantage + 48;
+	return SCALE_NORMAL;
 }
 
 
