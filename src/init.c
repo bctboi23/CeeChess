@@ -1,8 +1,14 @@
 // init.c
+#include "attack.h"
+#include "bitboards.h"
+#include "board.h"
+#include "movegen.h"
+#include "evaluate.h"
+#include "debug.h"
+#include "search.h"
 
-#include "defs.h"
-#include "stdio.h"
-#include "stdlib.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 #define RAND_64 	((U64)rand() | \
 					(U64)rand() << 15 | \
@@ -10,13 +16,13 @@
 					(U64)rand() << 45 | \
 					((U64)rand() & 0xf) << 60 )
 
-int Sq120ToSq64[BRD_SQ_NUM];
-int Sq64ToSq120[64];
+//int Sq120ToSq64[BRD_SQ_NUM];
+//int Sq64ToSq120[64];
 
 U64 SetMask[64];
 U64 ClearMask[64];
 
-U64 PieceKeys[13][120];
+U64 PieceKeys[13][BRD_SQ_NUM];
 U64 SideKey;
 U64 CastleKeys[16];
 
@@ -26,15 +32,26 @@ int RanksBrd[BRD_SQ_NUM];
 U64 FileBBMask[8];
 U64 RankBBMask[8];
 
+U64 AdjacentFilesMask[8];
+
+U64 ForwardRanksMasks[2][8];
+
 U64 BlackPassedMask[64];
 U64 WhitePassedMask[64];
 U64 IsolatedMask[64];
 
+U64 PassedMask[2][64];
+
 U64 BlackConnectedMask[64];
 U64 WhiteConnectedMask[64];
 
+U64 ConnectedMask[2][64];
+
 U64 BlackPawnShield[64]; // unused currently, may be reworked to use later
 U64 WhitePawnShield[64];
+
+U64 KingAreaMasks[2][64];
+U64 PawnShieldMasks[2][64];
 
 void InitEvalMasks() {
 
@@ -53,12 +70,21 @@ void InitEvalMasks() {
         }
 	}
 
+	for (f = FILE_A; f <= FILE_H; f++) {
+		AdjacentFilesMask[f] = (f == FILE_A) ? 0ull : FileBBMask[f - 1];
+		AdjacentFilesMask[f] |= (f == FILE_H) ? 0ull : FileBBMask[f + 1];
+	}
+
 	for(sq = 0; sq < 64; ++sq) {
 		IsolatedMask[sq] = 0ULL;
 		WhitePassedMask[sq] = 0ULL;
 		BlackPassedMask[sq] = 0ULL;
+		PassedMask[0][sq] = 0ULL;
+		PassedMask[1][sq] = 0ULL;
 		WhiteConnectedMask[sq] = 0ULL;
 		BlackConnectedMask[sq] = 0ULL;
+		ConnectedMask[0][sq] = 0ULL;
+		ConnectedMask[1][sq] = 0ULL;
 		WhitePawnShield[sq] = 0ULL;
 		BlackPawnShield[sq] = 0ULL;
     }
@@ -86,8 +112,8 @@ void InitEvalMasks() {
             tsq -= 8;
         }
 
-        if(FilesBrd[SQ120(sq)] > FILE_A) {
-            IsolatedMask[sq] |= FileBBMask[FilesBrd[SQ120(sq)] - 1];
+        if(FilesBrd[sq] > FILE_A) {
+            IsolatedMask[sq] |= FileBBMask[FilesBrd[sq] - 1];
 
             tsq = sq + 7;
 			WhiteConnectedMask[sq] |= (1ULL << tsq);
@@ -106,8 +132,8 @@ void InitEvalMasks() {
             }
         }
 
-        if(FilesBrd[SQ120(sq)] < FILE_H) {
-            IsolatedMask[sq] |= FileBBMask[FilesBrd[SQ120(sq)] + 1];
+        if(FilesBrd[sq] < FILE_H) {
+            IsolatedMask[sq] |= FileBBMask[FilesBrd[sq] + 1];
 
             tsq = sq + 9;
 			WhiteConnectedMask[sq] |= (1ULL << tsq);
@@ -125,7 +151,35 @@ void InitEvalMasks() {
                 tsq -= 8;
             }
         }
+
+		ConnectedMask[WHITE][sq] = WhiteConnectedMask[sq];
+		ConnectedMask[BLACK][sq] = BlackConnectedMask[sq];
+		PassedMask[WHITE][sq] = WhitePassedMask[sq];
+		PassedMask[BLACK][sq] = BlackPassedMask[sq];
 	}
+
+	for (int rank = 0; rank < 8; rank++) {
+        for (int i = rank + 1; i < 8; i++)
+            ForwardRanksMasks[WHITE][rank] |= RankBBMask[i];
+        ForwardRanksMasks[BLACK][rank] = ~ForwardRanksMasks[WHITE][rank] & ~RankBBMask[rank];
+    }
+
+	for (int sq = 0; sq < BRD_SQ_NUM; sq++) {
+
+        KingAreaMasks[WHITE][sq] = nonSliderMoveTable[1][sq] | (1ull << sq) | (nonSliderMoveTable[1][sq] << 8);
+        KingAreaMasks[BLACK][sq] = nonSliderMoveTable[1][sq] | (1ull << sq) | (nonSliderMoveTable[1][sq] >> 8);
+
+		// if on A or H file, extend the mask one file (from Ethereal)
+        KingAreaMasks[WHITE][sq] |= FileBBMask[COL(sq)] != FILE_A ? 0ull : KingAreaMasks[WHITE][sq] << 1;
+		KingAreaMasks[BLACK][sq] |= FileBBMask[COL(sq)] != FILE_A ? 0ull : KingAreaMasks[BLACK][sq] << 1;
+
+        KingAreaMasks[WHITE][sq] |= FileBBMask[COL(sq)] != FILE_H ? 0ull : KingAreaMasks[WHITE][sq] >> 1;
+        KingAreaMasks[BLACK][sq] |= FileBBMask[COL(sq)] != FILE_H ? 0ull : KingAreaMasks[BLACK][sq] >> 1;
+
+		U64 pawnShieldBB = (nonSliderMoveTable[1][sq] | (1ull << sq));
+		PawnShieldMasks[WHITE][sq] = pawnShieldBB & (pawnShieldBB << 8);
+		PawnShieldMasks[BLACK][sq] = pawnShieldBB & (pawnShieldBB >> 8);
+    }
 }
 
 void InitFilesRanksBrd() {
@@ -154,7 +208,7 @@ void InitHashKeys() {
 	int index = 0;
 	int index2 = 0;
 	for(index = 0; index < 13; ++index) {
-		for(index2 = 0; index2 < 120; ++index2) {
+		for(index2 = 0; index2 < BRD_SQ_NUM; ++index2) {
 			PieceKeys[index][index2] = RAND_64;
 		}
 	}
@@ -179,6 +233,7 @@ void InitBitMasks() {
 	}
 }
 
+/*
 void InitSq120To64() {
 
 	int index = 0;
@@ -204,14 +259,21 @@ void InitSq120To64() {
 		}
 	}
 }
+	*/
 
 void AllInit() {
-	InitSq120To64();
+	//InitSq120To64();
 	InitBitMasks();
 	InitHashKeys();
 	InitFilesRanksBrd();
+	InitNonSlideMoveLookup();
 	InitEvalMasks();
 	InitMvvLva();
 	InitEval();
+	InitPawnAttackLookup();
+	for (int i = 0; i < 2; i++) {
+		initMasks(i);
+		initAttackTable(i);
+	}
 	InitSearch();
 }

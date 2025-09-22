@@ -1,14 +1,19 @@
 // makemove.c
 
-#include "defs.h"
-#include "stdio.h"
+#include <stdio.h>
 
-#define HASH_PCE(pce,sq) (pos->posKey ^= (PieceKeys[(pce)][(sq)]))
-#define HASH_CA (pos->posKey ^= (CastleKeys[(pos->castlePerm)]))
-#define HASH_SIDE (pos->posKey ^= (SideKey))
-#define HASH_EP (pos->posKey ^= (PieceKeys[EMPTY][(pos->enPas)]))
+#include "attack.h"
+#include "move.h"
+#include "board.h"
+#include "eval-tuned.h"
+#include "debug.h"
 
-const int CastlePerm[120] = {
+static void AddPiece(const int sq, S_BOARD *pos, const int pce);
+static void ClearPiece(const int sq, S_BOARD *pos);
+static void MovePiece(const int from, const int to, S_BOARD *pos);
+
+/*
+static const int CastlePerms[120] = {
     15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
     15, 13, 15, 15, 15, 12, 15, 15, 14, 15,
@@ -22,8 +27,20 @@ const int CastlePerm[120] = {
     15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15, 15, 15
 };
+*/
 
-static void ClearPiece(const int sq, S_BOARD *pos) {
+static const int CastlePerms[BRD_SQ_NUM] = {
+    13, 15, 15, 15, 12, 15, 15, 14,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    7, 15, 15, 15,  3, 15, 15, 11,
+};
+
+void ClearPiece(const int sq, S_BOARD *pos) {
 
 	ASSERT(SqOnBoard(sq));
 	ASSERT(CheckBoard(pos));
@@ -32,88 +49,75 @@ static void ClearPiece(const int sq, S_BOARD *pos) {
 
     ASSERT(PieceValid(pce));
 
-	int col = PieceCol[pce];
-	int index = 0;
-	int t_pceNum = -1;
+	int col = (pce - 1) / 6;
 
 	ASSERT(SideValid(col));
 
     HASH_PCE(pce,sq);
 
 	pos->pieces[sq] = EMPTY;
-    pos->material[col] -= PieceValMG[pce];
-    pos->material[col + 2] -= PieceValEG[pce];
-
+    pos->material[col] -= curr_params->PieceVal[pce];
 	if(PieceBig[pce]) {
-			pos->bigPce[col]--;
-		if(PieceMaj[pce]) {
-			pos->majPce[col]--;
-		} else {
-			pos->minPce[col]--;
-		}
-	} else {
-		CLRBIT(pos->pawns[col],SQ64(sq));
-		CLRBIT(pos->pawns[BOTH],SQ64(sq));
-	}
+		pos->bigPce[col]--;
+	} 
+    CLRBIT(pos->piece_bbs[pce - 1], sq);
+	CLRBIT(pos->color_bbs[col], sq);
+    CLRBIT(pos->color_bbs[BOTH], sq);
 
+    /*
 	for(index = 0; index < pos->pceNum[pce]; ++index) {
 		if(pos->pList[pce][index] == sq) {
 			t_pceNum = index;
 			break;
 		}
 	}
+    */
+    
 
 	ASSERT(t_pceNum != -1);
 	ASSERT(t_pceNum>=0&&t_pceNum<10);
 
 	pos->pceNum[pce]--;
 
-	pos->pList[pce][t_pceNum] = pos->pList[pce][pos->pceNum[pce]];
+	//pos->pList[pce][t_pceNum] = pos->pList[pce][pos->pceNum[pce]];
 
 }
 
 
-static void AddPiece(const int sq, S_BOARD *pos, const int pce) {
+void AddPiece(const int sq, S_BOARD *pos, const int pce) {
 
     ASSERT(PieceValid(pce));
     ASSERT(SqOnBoard(sq));
 
-	int col = PieceCol[pce];
+	int col = (pce - 1) / 6;
 	ASSERT(SideValid(col));
 
     HASH_PCE(pce,sq);
 
 	pos->pieces[sq] = pce;
-
     if(PieceBig[pce]) {
-			pos->bigPce[col]++;
-		if(PieceMaj[pce]) {
-			pos->majPce[col]++;
-		} else {
-			pos->minPce[col]++;
-		}
-	} else {
-		SETBIT(pos->pawns[col],SQ64(sq));
-		SETBIT(pos->pawns[BOTH],SQ64(sq));
-	}
+	    pos->bigPce[col]++;
+    }
+    SETBIT(pos->piece_bbs[pce - 1], sq);
+    SETBIT(pos->color_bbs[col], sq);
+    SETBIT(pos->color_bbs[BOTH], sq);
 
-	pos->material[col] += PieceValMG[pce];
-    pos->material[col + 2] += PieceValEG[pce];
-	pos->pList[pce][pos->pceNum[pce]++] = sq;
+	pos->material[col] += curr_params->PieceVal[pce];
+    pos->pceNum[pce]++;
+	//pos->pList[pce][pos->pceNum[pce]++] = sq;
 
 }
 
-static void MovePiece(const int from, const int to, S_BOARD *pos) {
+void MovePiece(const int from, const int to, S_BOARD *pos) {
 
     ASSERT(SqOnBoard(from));
     ASSERT(SqOnBoard(to));
 
-	int index = 0;
 	int pce = pos->pieces[from];
-	int col = PieceCol[pce];
+    int col = (pce - 1) / 6;
 	ASSERT(SideValid(col));
     ASSERT(PieceValid(pce));
-
+ 
 #ifdef DEBUG
 	int t_PieceNum = FALSE;
 #endif
@@ -124,13 +128,13 @@ static void MovePiece(const int from, const int to, S_BOARD *pos) {
 	HASH_PCE(pce,to);
 	pos->pieces[to] = pce;
 
-	if(!PieceBig[pce]) {
-		CLRBIT(pos->pawns[col],SQ64(from));
-		CLRBIT(pos->pawns[BOTH],SQ64(from));
-		SETBIT(pos->pawns[col],SQ64(to));
-		SETBIT(pos->pawns[BOTH],SQ64(to));
-	}
-
+    CLRBIT(pos->piece_bbs[pce - 1], from);
+	CLRBIT(pos->color_bbs[col], from);
+    CLRBIT(pos->color_bbs[BOTH], from);
+    SETBIT(pos->piece_bbs[pce - 1], to);
+    SETBIT(pos->color_bbs[col], to);
+    SETBIT(pos->color_bbs[BOTH], to);
+/*
 	for(index = 0; index < pos->pceNum[pce]; ++index) {
 		if(pos->pList[pce][index] == from) {
 			pos->pList[pce][index] = to;
@@ -141,6 +145,7 @@ static void MovePiece(const int from, const int to, S_BOARD *pos) {
 		}
 	}
 	ASSERT(t_PieceNum);
+*/
 }
 
 int MakeMove(S_BOARD *pos, int move) {
@@ -162,9 +167,9 @@ int MakeMove(S_BOARD *pos, int move) {
 
 	if(move & MFLAGEP) {
         if(side == WHITE) {
-            ClearPiece(to-10,pos);
+            ClearPiece(to - 8,pos);
         } else {
-            ClearPiece(to+10,pos);
+            ClearPiece(to + 8,pos);
         }
     } else if (move & MFLAGCA) {
         switch(to) {
@@ -192,8 +197,8 @@ int MakeMove(S_BOARD *pos, int move) {
     pos->history[pos->hisPly].enPas = pos->enPas;
     pos->history[pos->hisPly].castlePerm = pos->castlePerm;
 
-    pos->castlePerm &= CastlePerm[from];
-    pos->castlePerm &= CastlePerm[to];
+    pos->castlePerm &= CastlePerms[from];
+    pos->castlePerm &= CastlePerms[to];
     pos->enPas = NO_SQ;
 
 	HASH_CA;
@@ -217,10 +222,10 @@ int MakeMove(S_BOARD *pos, int move) {
         pos->fiftyMove = 0;
         if(move & MFLAGPS) {
             if(side==WHITE) {
-                pos->enPas=from+10;
+                pos->enPas=from + 8;
                 ASSERT(RanksBrd[pos->enPas]==RANK_3);
             } else {
-                pos->enPas=from-10;
+                pos->enPas=from - 8;
                 ASSERT(RanksBrd[pos->enPas]==RANK_6);
             }
             HASH_EP;
@@ -287,9 +292,9 @@ void TakeMove(S_BOARD *pos) {
 
 	if(MFLAGEP & move) {
         if(pos->side == WHITE) {
-            AddPiece(to-10, pos, bP);
+            AddPiece(to - 8, pos, bP);
         } else {
-            AddPiece(to+10, pos, wP);
+            AddPiece(to + 8, pos, wP);
         }
     } else if(MFLAGCA & move) {
         switch(to) {

@@ -1,7 +1,13 @@
 // pvtable.c
 
-#include "stdio.h"
-#include "defs.h"
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "move.h"
+#include "movegen.h"
+#include "hashtable.h"
+#include "debug.h"
+#include "search.h"
 
 S_HASHTABLE HashTable[1];
 
@@ -55,7 +61,7 @@ void InitHashTable(S_HASHTABLE *table, const int MB) {
     table->numEntries = HashSize / sizeof(S_HASHENTRY);
     table->numEntries -= 2;
 	
-	if(table->pTable!=NULL) {
+	if(table->pTable != NULL) {
 		free(table->pTable);
 	}
 		
@@ -70,7 +76,7 @@ void InitHashTable(S_HASHTABLE *table, const int MB) {
 	
 }
 
-int ProbeHashEntry(S_BOARD *pos, S_HASHTABLE *table, int *move, int *score, int alpha, int beta, int depth) {
+int ProbeHashEntry(S_BOARD *pos, S_HASHTABLE *table, int *move, int *score, int *tt_depth, int alpha, int beta, int depth) {
 
 	int index = pos->posKey % table->numEntries;
 	
@@ -83,6 +89,7 @@ int ProbeHashEntry(S_BOARD *pos, S_HASHTABLE *table, int *move, int *score, int 
 	
 	if( table->pTable[index].posKey == pos->posKey ) {
 		*move = table->pTable[index].move;
+		*tt_depth = table->pTable[index].depth;
 		// if hash depth > depth move score is usable
 		if(table->pTable[index].depth >= depth){
 			table->hit++;

@@ -1,324 +1,108 @@
-#ifndef EVAL_H
-#define EVAL_H
+#ifndef EVAL_TUNED_H
+#define EVAL_TUNED_H
 
-// Game phase constants
-const int minorPhase = 1;
-const int rookPhase = 2;
-const int queenPhase = 4;
-const int totalPhase = minorPhase * 8 + rookPhase * 4 + queenPhase * 2;
+// the first 258 params are calculated via formula instead of changed manually --- DEPRECATED, now just the first 26
+#define TUNABLE_START 26
 
-// King tropism constants (stolen from chessprogrammingwiki)
-const int diag_nw[64] = {
-   0, 1, 2, 3, 4, 5, 6, 7,
-   1, 2, 3, 4, 5, 6, 7, 8,
-   2, 3, 4, 5, 6, 7, 8, 9,
-   3, 4, 5, 6, 7, 8, 9,10,
-   4, 5, 6, 7, 8, 9,10,11,
-   5, 6, 7, 8, 9,10,11,12,
-   6, 7, 8, 9,10,11,12,13,
-   7, 8, 9,10,11,12,13,14
-};
+// the length of the PSQTs
+#define PSQT_LEN 64 * 6
 
-const int diag_ne[64] = {
-   7, 6, 5, 4, 3, 2, 1, 0,
-   8, 7, 6, 5, 4, 3, 2, 1,
-   9, 8, 7, 6, 5, 4, 3, 2,
-  10, 9, 8, 7, 6, 5, 4, 3,
-  11,10, 9, 8, 7, 6, 5, 4,
-  12,11,10, 9, 8, 7, 6, 5,
-  13,12,11,10, 9, 8, 7, 6,
-  14,13,12,11,10, 9, 8, 7
-};
+// we convert all scores into midgame and endgame scores first
+#define MAKE_SCORE(mg, eg) ((int)((unsigned int)(eg) << 16) + (mg))
+#define S(mg, eg) MAKE_SCORE(mg, eg)
 
-int bonus_dia_distance[15] = {5, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+extern const int minorPhase;
+extern const int rookPhase;
+extern const int queenPhase;
+extern const int totalPhase;
 
-// TUNED EVALUATION -- USED OVER OLD eval.h
-/*
-//const int PieceValMG[5] = {86, 370, 357, 483, 1094, };
-const int BishopPairMG = 44;
-const int PawnPassedMG[8] = {-6, 12, 11, -8, 14, 36, 122, 153, };
-const int PawnPassedConnectedMG[8] = {-3, 1, -4, 9, 57, 38, 37, 47, };
-const int PawnConnectedMG = 11;
-const int PawnIsolatedMG = -18;
-const int RookOpenFileMG = 63;
-const int RookSemiOpenFileMG = 22;
-const int QueenOpenFileMG = 1;
-const int QueenSemiOpenFileMG = 6;
-//const int PieceValEG[5] = {93, 321, 347, 607, 1097, };
-const int BishopPairEG = 56;
-const int PawnPassedEG[8] = {-20, 4, 10, 35, 60, 126, 185, 255, };
-const int PawnPassedConnectedEG[8] = {-33, 11, 13, 20, 15, -32, 71, 137, };
-const int PawnConnectedEG = 7;
-const int PawnIsolatedEG = -8;
-const int RookOpenFileEG = 11;
-const int RookSemiOpenFileEG = 21;
-const int QueenOpenFileEG = 29;
-const int QueenSemiOpenFileEG = 9;
-const int KingSemiOpen = 18;
-const int TropismValues[4] = {16, 43, 15, 69, };
-const int TropismMatAdjs[13] = {24, 2, 9, 21, 65, 107, 146, 205, 229, 228, 237, 207, 235, };
-const int PawnMG[64] = {
--20, 1, 18, -13, 2, 1, -19, 4, 
--19, -8, -21, -21, -23, 27, 23, -11, 
--11, -20, -7, -10, -11, 1, 9, -6, 
--9, -8, 1, 26, 16, 7, -4, -15, 
-8, 12, 13, 37, 28, 24, 9, -4, 
-14, 8, 38, 31, 66, 90, 34, 9, 
-33, 39, 12, 34, -1, 26, -65, -79, 
--17, -17, -13, 11, 6, 6, 26, -2, 
-};
-const int PawnEG[64] = {
--7, 16, -11, 16, -3, -9, 11, -13, 
-14, 5, 16, 4, 16, 3, -2, -9, 
-3, 4, -3, 2, 5, 1, -7, -8, 
-15, 10, -2, -13, -6, -5, 0, 0, 
-29, 15, 6, -18, -11, -3, 10, 14, 
-58, 48, 21, -12, -29, -7, 24, 36, 
-69, 57, 27, 3, 17, 5, 48, 80, 
--2, -15, 19, -4, 3, 14, 0, 0, 
-};
-const int KnightMG[64] = {
--99, -21, -55, -34, -11, -25, -19, -24, 
--32, -46, -9, 0, 2, 19, -16, -16, 
--23, -5, 18, 15, 26, 23, 33, -17, 
--14, 16, 18, 14, 33, 24, 26, -9, 
--18, 22, 23, 65, 47, 80, 22, 29, 
--45, 53, 37, 65, 92, 110, 75, 32, 
--87, -56, 62, 34, 20, 64, -5, -34, 
--169, -64, -34, -16, 20, -56, -25, -102, 
-};
-const int KnightEG[64] = {
--25, -48, -14, -7, -15, -11, -47, -64, 
--27, -11, 2, 3, 9, -8, -13, -37, 
--12, 9, 10, 29, 25, 8, -13, -14, 
--6, 5, 34, 44, 32, 34, 19, -7, 
--4, 17, 40, 38, 35, 26, 17, -12, 
--22, -4, 26, 25, 11, 11, -11, -36, 
--22, 6, -14, 12, 4, -19, -18, -41, 
--68, -42, -2, -30, -15, -38, -58, -107, 
-};
-const int BishopMG[64] = {
--33, 7, -12, -12, -10, -15, -27, -32, 
-4, 22, 21, 1, 9, 16, 34, 3, 
--2, 17, 12, 13, 9, 27, 14, 4, 
--12, 14, 8, 25, 31, 9, 7, -8, 
--3, 0, 18, 46, 36, 29, 0, -9, 
--22, 25, 33, 20, 14, 41, 14, -16, 
--32, -1, -26, -24, 33, 25, 4, -61, 
--18, -1, -96, -47, -25, -48, 11, -15, 
-};
-const int BishopEG[64] = {
--22, -4, -22, -2, -3, -12, -4, -11, 
--7, -20, 0, 4, 10, -1, -11, -30, 
--5, 5, 20, 20, 25, 10, 1, -8, 
--1, 10, 24, 30, 18, 17, 4, 0, 
-5, 19, 22, 21, 22, 21, 8, 6, 
-6, 2, 10, 9, 14, 15, 15, 10, 
--6, 4, 13, -6, -2, 5, 5, -16, 
--13, -23, -6, -6, 0, -4, -12, -20, 
-};
-const int RookMG[64] = {
--6, -7, -9, 7, 6, 10, -29, -9, 
--39, -13, -23, -9, -9, 4, -4, -65, 
--40, -24, -20, -21, -4, -3, 5, -25, 
--33, -31, -26, -25, 8, -11, 5, -22, 
--20, -18, -2, 5, -1, 22, -10, -9, 
--3, 3, 5, 4, -2, 33, 34, 11, 
-6, 26, 30, 44, 44, 59, 3, 11, 
-14, 31, 4, 40, 35, 17, 41, 25, 
-};
-const int RookEG[64] = {
-5, 9, 14, 4, 2, 2, 12, -16, 
-5, 0, 3, 3, -4, -2, -11, 9, 
-6, 8, 0, 3, -7, -6, -6, -9, 
-11, 19, 18, 17, -4, 5, 1, 1, 
-15, 15, 21, 10, 12, 12, 9, 13, 
-17, 20, 16, 16, 11, 7, 10, 4, 
-27, 20, 22, 16, 8, 13, 29, 24, 
-27, 20, 31, 21, 25, 22, 15, 19, 
-};
-const int QueenMG[64] = {
-2, 1, 12, 31, -2, -25, -5, -37, 
--17, 7, 29, 19, 21, 22, 1, 16, 
--3, 16, 1, 6, 2, 13, 23, 16, 
-0, -21, -11, -13, -3, 7, 9, 8, 
--19, -23, -17, -17, 1, 24, 0, -1, 
--13, -9, 8, -7, 25, 62, 33, 48, 
--23, -51, -12, -2, -4, 54, 33, 34, 
--32, 16, 20, 16, 55, 23, 32, 45, 
-};
-const int QueenEG[64] = {
--7, -18, -17, -43, 0, -13, -40, -52, 
--17, -20, -27, -15, -7, -16, -28, -33, 
-5, -27, 11, 11, 14, 17, 19, 11, 
--8, 34, 28, 59, 37, 37, 40, 20, 
-12, 26, 25, 45, 56, 36, 75, 46, 
--6, 5, 8, 61, 56, 42, 50, 21, 
--18, 28, 33, 44, 46, 22, 30, 30, 
-3, 20, 23, 28, 30, 33, 21, 34, 
-};
-const int KingMG[64] = {
--6, 68, 46, -42, 36, -17, 59, 38, 
-27, 52, 28, -42, -13, 18, 50, 45, 
--11, 21, -4, -42, -12, 2, 20, -8, 
--7, 22, 1, -46, -49, -38, -25, -21, 
--30, 0, -13, -26, -34, -38, -14, -37, 
--6, 15, 23, -40, -19, 30, 23, -21, 
-1, 14, -33, 3, -52, -28, -17, -45, 
--132, -35, -6, -86, -123, -63, -33, -56, 
-};
-const int KingEG[64] = {
--65, -52, -31, -8, -36, -11, -42, -64, 
--34, -18, 5, 21, 20, 9, -7, -27, 
--16, -2, 18, 33, 31, 22, 8, -9, 
--24, -4, 27, 40, 44, 37, 17, -15, 
--6, 26, 36, 41, 41, 51, 38, 9, 
-13, 24, 27, 33, 30, 58, 55, 17, 
--11, 18, 26, 26, 36, 52, 26, 17, 
--66, -28, -16, -9, 5, 31, 10, -10, 
-};
-*/
-//const int PieceValMG[5] = {91, 377, 384, 515, 1124, };
-const int BishopPairMG = 45;
-const int PawnPassedMG[8] = {-3, 11, 2, -12, 16, 43, 121, 139, };
-const int PawnPassedConnectedMG[8] = {-15, 11, 7, 14, 61, 83, 28, 83, };
-const int PawnConnectedMG = 12;
-const int PawnIsolatedMG = -16;
-const int RookOpenFileMG = 62;
-const int RookSemiOpenFileMG = 26;
-const int QueenOpenFileMG = -3;
-const int QueenSemiOpenFileMG = 5;
-//const int PieceValEG[5] = {98, 327, 354, 614, 1127, };
-const int BishopPairEG = 53;
-const int PawnPassedEG[8] = {-18, 7, 12, 38, 60, 123, 182, 269, };
-const int PawnPassedConnectedEG[8] = {-19, 12, 15, 28, 26, -19, 33, 135, };
-const int PawnConnectedEG = 5;
-const int PawnIsolatedEG = -10;
-const int RookOpenFileEG = 6;
-const int RookSemiOpenFileEG = 18;
-const int QueenOpenFileEG = 40;
-const int QueenSemiOpenFileEG = 18;
-const int KingSemiOpen = 15;
-const int TropismValues[4] = {40, 33, 37, 88, };
-const int TropismMatAdjs[13] = {3, 2, -7, 21, 75, 114, 158, 219, 228, 237, 242, 209, 271, };
-const int PawnMG[64] = {
--27, -1, 15, 12, 14, 24, -11, 10, 
--24, -1, -14, -17, -18, 33, 30, -11, 
--18, -15, -2, -5, -6, 3, 17, -7, 
--14, -1, 8, 29, 24, 14, -1, -15, 
-2, 19, 18, 44, 34, 30, 16, -7, 
-8, 12, 36, 34, 73, 102, 32, 14, 
-66, 64, 21, 47, 30, 34, -36, -77, 
--44, -13, -14, 18, -22, 17, 31, 6, 
-};
-const int PawnEG[64] = {
-3, -5, -10, 25, -7, -2, 19, 1, 
-13, -1, 9, -2, 10, -5, -9, -13, 
-3, -1, -8, -4, 1, -4, -14, -11, 
-14, 2, -8, -19, -13, -13, -5, -4, 
-28, 9, -2, -27, -17, -10, 1, 10, 
-55, 44, 18, -18, -35, -18, 20, 29, 
-60, 53, 22, -4, 3, -1, 38, 84, 
--3, 1, 26, 2, -4, 5, -9, 25, 
-};
-const int KnightMG[64] = {
--102, -11, -48, -33, -3, -22, -11, -16, 
--23, -34, -1, 6, 6, 27, -12, -9, 
--14, 3, 25, 20, 29, 27, 37, -12, 
--3, 25, 24, 19, 35, 24, 29, -6, 
--2, 27, 27, 66, 47, 85, 25, 34, 
--38, 70, 47, 72, 105, 138, 76, 21, 
--92, -56, 83, 45, 14, 79, 11, -33, 
--168, -67, -39, -31, 30, -62, -41, -92, 
-};
-const int KnightEG[64] = {
--7, -40, -10, 1, -11, -6, -39, -62, 
--24, -7, 7, 12, 14, -4, -8, -39, 
--9, 13, 12, 31, 28, 12, -11, -9, 
--5, 5, 37, 47, 37, 36, 21, -7, 
--6, 19, 42, 37, 41, 27, 22, -10, 
--19, -9, 25, 28, 8, 4, -8, -28, 
--9, 12, -21, 11, 11, -18, -16, -39, 
--66, -33, 6, -19, -13, -35, -49, -93, 
-};
-const int BishopMG[64] = {
--42, 5, -12, -15, -2, -13, -45, -31, 
-8, 21, 24, 2, 11, 16, 39, 8, 
--3, 18, 12, 17, 13, 31, 19, 6, 
--9, 16, 10, 24, 37, 11, 6, -3, 
--2, 0, 18, 50, 38, 39, 3, -9, 
--23, 37, 31, 25, 31, 62, 25, -13, 
--30, 16, -30, -18, 30, 30, 27, -75, 
--24, 8, -62, -41, -12, -52, 6, 2, 
-};
-const int BishopEG[64] = {
--14, -4, -20, 0, -6, -11, 5, -8, 
--7, -14, -1, 5, 10, 0, -12, -28, 
--4, 3, 17, 18, 23, 5, 2, -7, 
--1, 10, 22, 30, 15, 17, 9, 1, 
-6, 19, 20, 20, 23, 16, 7, 8, 
-8, -3, 13, 10, 5, 6, 11, 12, 
--4, -2, 14, -3, 2, 3, -1, -2, 
--8, -19, -14, -3, 2, -1, -7, -14, 
-};
-const int RookMG[64] = {
--1, -4, -2, 12, 11, 13, -37, -12, 
--34, -9, -22, -11, -11, 7, -8, -73, 
--43, -25, -19, -26, -11, -8, 1, -28, 
--41, -25, -19, -19, -5, -18, -3, -36, 
--27, -20, -6, 6, -1, 23, -9, -19, 
--18, 11, 16, 8, 4, 33, 54, 20, 
-0, 29, 30, 30, 54, 47, 8, 4, 
-15, 12, -7, 46, 34, 10, 57, 2, 
-};
-const int RookEG[64] = {
-9, 15, 16, 6, 3, 4, 19, -7, 
-11, 6, 10, 8, 0, -2, -4, 16, 
-14, 15, 6, 9, 1, 2, 0, -4, 
-21, 21, 19, 17, 9, 10, 6, 9, 
-20, 20, 27, 14, 19, 14, 11, 17, 
-27, 21, 17, 22, 15, 12, 9, 7, 
-33, 23, 28, 26, 9, 21, 29, 30, 
-31, 30, 40, 23, 29, 28, 16, 31, 
-};
-const int QueenMG[64] = {
-6, 7, 26, 39, 6, -19, -12, -45, 
--21, 7, 36, 27, 28, 29, 4, 24, 
--10, 13, -4, 10, 7, 15, 23, 21, 
--6, -25, -13, -14, -9, 7, 8, 3, 
--22, -33, -28, -27, -6, 14, -6, -13, 
--7, -3, 6, -13, 20, 42, 31, 43, 
--15, -58, -7, -11, -19, 44, 43, 42, 
--20, 13, 7, 16, 63, 12, 26, 68, 
-};
-const int QueenEG[64] = {
--5, -12, -22, -37, 9, -1, -17, -25, 
--2, -14, -33, -8, -2, -12, -19, -23, 
-15, -24, 19, 7, 11, 24, 24, 9, 
-13, 42, 28, 52, 41, 42, 46, 32, 
-31, 45, 39, 53, 51, 44, 76, 54, 
--2, 13, 13, 67, 49, 56, 44, 24, 
--7, 49, 35, 48, 51, 37, 31, 23, 
-5, 32, 37, 31, 21, 43, 26, 26, 
-};
-const int KingMG[64] = {
--9, 61, 43, -45, 38, -21, 49, 26, 
-26, 55, 32, -35, -5, 22, 55, 42, 
--3, 24, -10, -25, -14, 1, 27, -5, 
--7, 21, -16, -51, -34, -27, -16, -14, 
--17, -13, 26, -25, -21, -20, -19, -52, 
--5, 13, 16, -23, -13, 9, 5, -30, 
--19, 5, -32, 9, -44, -14, -50, -57, 
--157, -19, -17, -44, -124, -87, -16, -47, 
-};
-const int KingEG[64] = {
--69, -54, -33, -12, -42, -13, -40, -61, 
--37, -22, 2, 17, 15, 5, -11, -30, 
--22, -6, 19, 27, 30, 20, 5, -11, 
--23, -2, 30, 40, 39, 34, 15, -13, 
--12, 27, 28, 40, 37, 48, 39, 13, 
-15, 23, 28, 27, 26, 59, 58, 18, 
--8, 18, 23, 16, 34, 50, 34, 14, 
--77, -29, -11, -10, 5, 38, 8, -9, 
-};
+extern const int diag_nw[64];
+extern const int diag_ne[64];
+extern const int bonus_dia_distance[15];
+
+typedef struct {
+   // material
+   int PieceVal[13];
+   int materialValTunable[5];
+
+   // pawns
+   int PawnIsolated[4];
+   int PawnDoubled[4];
+   int PawnConnected;
+   int PawnAttack;
+   int PawnStorm;
+   int PawnShield;
+
+   int PassedRank[8];
+   int PawnCanAdvance[8];
+   int PawnSafeAdvance[8];
+   int PassedLeverable;
+   int SafePromotionPath;
+   int OwnKingPawnTropism;
+   int EnemyKingPawnTropism;
+
+   // knights
+   int KnightMobility[9];
+   int KnightInSiberia[4];
+   int KnightAttacker;
+   int KnightAttack;
+   int KnightCheck;
+   int KnightOutpost;
+   int KnightBehindPawn;
+
+   // bishops
+   int BishopMobility[14];
+   int BishopAttacker;
+   int BishopAttack;
+   int BishopCheck;
+   int BishopPair;
+   int BishopBehindPawn;
+   int BishopLongDiagonal;
+   int BishopRammedPawns;
+
+   // rooks
+   int RookMobility[15];
+   int RookAttacker;
+   int RookAttack;
+   int RookCheck;
+
+   int RookFile[2];
+   int RookOn7th;
+   int RookOnQueenFile;
+
+   // queens
+   int QueenMobility[28];
+   int QueenAttacker;
+   int QueenAttack;
+   int QueenCheck;
+
+   // king attack
+   int attackerAdj[4];
+   int MinorDefenders;
+   int NoQueen;
+   int WeakSquare;
+
+   // threats
+   int WeakPawn;
+   int MinorAttackedByPawn;
+   int MinorAttackedByMinor;
+   int MinorAttackedByMajor;
+   int RookAttackedByLesser;
+   int MinorAttackedByKing;
+   int RookAttackedByKing;
+   int QueenAttackedByPiece;
+   int RestrictedPiece;
+
+   // PSQTs
+   int PawnPSQT[64];
+   int KnightPSQT[64];
+   int BishopPSQT[64];
+   int RookPSQT[64];
+   int QueenPSQT[64];
+   int KingPSQT[64];
+
+} S_EVAL_PARAMS;
+
+extern S_EVAL_PARAMS curr_params[1];
+
 #endif
