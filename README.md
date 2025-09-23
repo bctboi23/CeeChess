@@ -64,7 +64,7 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 
 **Evaluation:**
 - Material
-- PSQT (Midgame and Endgame, from Lyudmil)
+- PSQT
 - Mobility
 - King Safety
 - Threats
