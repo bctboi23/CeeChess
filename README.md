@@ -88,4 +88,4 @@ The Engine searches with a Principal Variation Search inside a Negamax framework
 - Probcut
 - Aspiration Windows
 
-None of the code I write is copyrighted or protected in any way, and you may make use of all that you wish. You do not have to credit me if you use any of the code I write, but it would be great if you did
+Please credit me if you use my code. I do not give permission for any actor, party, or organization to use my code for any purpose in training, or other use in any Large Language Models, or any code generation, debugging, or other automated tools.
