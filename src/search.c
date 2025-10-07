@@ -472,17 +472,12 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 			printf("info score cp %d depth %d nodes %ld time %d ",
 				bestScore,currentDepth,info->nodes,GetTimeMs()-info->starttime);
 			}
-		} else if(info->GAME_MODE == XBOARDMODE && info->POST_THINKING == TRUE) {
-			printf("%d %d %d %ld ",
-				currentDepth,bestScore,(GetTimeMs()-info->starttime)/10,info->nodes);
 		} else if(info->POST_THINKING == TRUE) {
 			printf("score:%d depth:%d nodes:%ld time:%d(ms) ",
 				bestScore,currentDepth,info->nodes,GetTimeMs()-info->starttime);
 		}
 		if(info->GAME_MODE == UCIMODE || info->POST_THINKING == TRUE) {
-			if((!info->GAME_MODE) == XBOARDMODE) {
-				printf("pv");
-			}
+			printf("pv");
 			for(pvNum = 0; pvNum < pvMoves; ++pvNum) {
 				printf(" %s",PrMove(pos->PvArray[pvNum]));
 			}
@@ -501,9 +496,6 @@ void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
 
 	if(info->GAME_MODE == UCIMODE) {
 		printf("bestmove %s\n",PrMove(bestMove));
-	} else if(info->GAME_MODE == XBOARDMODE) {
-		printf("move %s\n",PrMove(bestMove));
-		MakeMove(pos, bestMove);
 	} else {
 		printf("\n\n***!! CeeChess makes move %s !!***\n\n",PrMove(bestMove));
 		MakeMove(pos, bestMove);

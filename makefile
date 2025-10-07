@@ -6,7 +6,7 @@ CFLAGS = -O3 -s -Wall
 #CFLAGS = -O3 -g -pg -no-pie # use these compile flags if profiling with gprof
 CFLAGS = -O3 -s -Wall -fopenmp # use these compile flags if tuning eval and have ability to use OpenMP
 LDFLAGS = -lm
-VERSION = CeeChess-v2.0
+VERSION = CeeChess-v2.1
 
 # windows requires backslash
 ifeq ($(OS),Windows_NT)

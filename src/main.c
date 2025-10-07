@@ -7,7 +7,7 @@
 #include "board.h"
 #include "hashtable.h"
 #include "uci.h"
-#include "xboard.h"
+#include "console.h"
 #include "init.h"
 
 int main() {
@@ -36,10 +36,6 @@ int main() {
 			continue;
 		if (!strncmp(line, "uci",3)) {
 			Uci_Loop(pos, info, HashTable);
-			if(info->quit == TRUE) break;
-			continue;
-		} else if (!strncmp(line, "xboard",6))	{
-			XBoard_Loop(pos, info, HashTable);
 			if(info->quit == TRUE) break;
 			continue;
 		} else if (!strncmp(line, "CeeChess",8))	{
