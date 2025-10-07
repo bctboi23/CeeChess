@@ -9,6 +9,8 @@
 #define MAXPOSITIONMOVES 256
 #define MAXDEPTH 64
 
+#define NAME "CeeChess_v2.1"
+
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 #define FR2SQ(f,r) ( (f) + ( (r) * 8 ) )
@@ -36,12 +38,11 @@ enum { FALSE, TRUE, ORDER };
 
 enum { WHITE, BLACK, BOTH };
 
-enum { UCIMODE, XBOARDMODE, CONSOLEMODE };
-
 enum { FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NONE };
 enum { RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_NONE };
 
 // this is for use in the move storage
+#define NUM_PTYPES 13
 enum { EMPTY, wP, wN, wB, wR, wQ, wK, bP, bN, bB, bR, bQ, bK  };
 
 enum { WKCA = 1, WQCA = 2, BKCA = 4, BQCA = 8 };
@@ -88,7 +89,7 @@ typedef struct {
 
     int PvArray[MAXDEPTH];
     int evalStack[MAXDEPTH];
-	int searchHistory[13][BRD_SQ_NUM];
+	int searchHistory[NUM_PTYPES][BRD_SQ_NUM];
 	int searchKillers[2][MAXDEPTH];
 
     int pieces[BRD_SQ_NUM]; 
@@ -104,7 +105,7 @@ typedef struct {
 
 	int castlePerm;
 
-	int pceNum[13];
+	int pceNum[NUM_PTYPES];
     int bigPce[2];
 	int material[2];
 
@@ -118,21 +119,21 @@ extern char FileChar[];
 extern int FilesBrd[BRD_SQ_NUM];
 extern int RanksBrd[BRD_SQ_NUM];
 
-extern int PieceCol[13];
+extern int PieceCol[NUM_PTYPES];
 
-extern int PieceBig[13];
+extern int PieceBig[NUM_PTYPES];
  
-extern int PiecePawn[13];
-extern int PieceKnight[13];
-extern int PieceKing[13];
-extern int PieceBishop[13];
-extern int PieceRook[13];
-extern int PieceRookQueen[13];
-extern int PieceBishopQueen[13];
-extern int PieceSlides[13];
+extern int PiecePawn[NUM_PTYPES];
+extern int PieceKnight[NUM_PTYPES];
+extern int PieceKing[NUM_PTYPES];
+extern int PieceBishop[NUM_PTYPES];
+extern int PieceRook[NUM_PTYPES];
+extern int PieceRookQueen[NUM_PTYPES];
+extern int PieceBishopQueen[NUM_PTYPES];
+extern int PieceSlides[NUM_PTYPES];
 
 
-extern U64 PieceKeys[13][BRD_SQ_NUM];
+extern U64 PieceKeys[NUM_PTYPES][BRD_SQ_NUM];
 extern U64 SideKey;
 extern U64 CastleKeys[16];
 

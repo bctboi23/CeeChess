@@ -7,6 +7,8 @@
 #define INFINITE 30000
 #define ISMATE (INFINITE - MAXDEPTH)
 
+enum { UCIMODE, CONSOLEMODE };
+
 typedef struct {
 
     long nodes;
