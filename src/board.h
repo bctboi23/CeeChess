@@ -9,7 +9,7 @@
 #define MAXPOSITIONMOVES 256
 #define MAXDEPTH 64
 
-#define NAME "CeeChess_v2.1"
+#define NAME "CeeChess_v2.2"
 
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -89,7 +89,7 @@ typedef struct {
 
     int PvArray[MAXDEPTH];
     int evalStack[MAXDEPTH];
-	int searchHistory[NUM_PTYPES][BRD_SQ_NUM];
+	int searchHistory[2][BRD_SQ_NUM][BRD_SQ_NUM];
 	int searchKillers[2][MAXDEPTH];
 
     int pieces[BRD_SQ_NUM]; 

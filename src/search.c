@@ -54,8 +54,8 @@ static void CheckUp(S_SEARCHINFO *info) {
 static void PickNextMove(int moveNum, S_MOVELIST *list) {
 
 	S_MOVE temp;
-	int index = 0;
-	int bestScore = 0;
+	int index = moveNum;
+	int bestScore = list->moves[index].score;
 	int bestNum = moveNum;
 
 	for (index = moveNum; index < list->count; ++index) {
@@ -92,12 +92,6 @@ static void ClearForSearch(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
 	int index = 0;
 	int index2 = 0;
 
-	for(index = 0; index < 13; ++index) {
-		for(index2 = 0; index2 < BRD_SQ_NUM; ++index2) {
-			pos->searchHistory[index][index2] = 0;
-		}
-	}
-
 	for(index = 0; index < 2; ++index) {
 		for(index2 = 0; index2 < MAXDEPTH; ++index2) {
 			pos->searchKillers[index][index2] = 0;
@@ -118,6 +112,13 @@ static void ClearForSearch(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table)
 	info->nodes = 0;
 	info->fh = 0;
 	info->fhf = 0;
+}
+
+void ClearHistory(S_BOARD *pos) {
+	for (int c = 0; c < 2; ++c)
+		for (int f = 0; f < BRD_SQ_NUM; ++f)
+			for (int t = 0; t < BRD_SQ_NUM; ++t)
+				pos->searchHistory[c][f][t] = 0;
 }
 
 static int Quiescence(int alpha, int beta, S_BOARD *pos, S_SEARCHINFO *info) {
@@ -322,6 +323,9 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 					abs(Score) < ISMATE && 
 					(pos->bigPce[pos->side] > 0));
 
+	int quiets_tried = 0;
+	int tried_quiets[MAXPOSITIONMOVES] = {0};
+
 	for(MoveNum = 0; MoveNum < list->count; ++MoveNum) {
 
 		// return if stopped
@@ -346,6 +350,8 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 		Legal++;
 
+		int currMove = list->moves[MoveNum].move;
+
 		// PVS (speeds up search with good move ordering)
 		if (FoundPv == TRUE) {
 
@@ -356,12 +362,15 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 				int reduce = LMRTable[MIN(depth, 63)][MIN(Legal, 63)];
 
 				// reduce less for killer moves
-				if ((list->moves[MoveNum].move == pos->searchKillers[0][pos->ply]) || 
-					(list->moves[MoveNum].move == pos->searchKillers[1][pos->ply])
+				if ((currMove == pos->searchKillers[0][pos->ply]) || 
+					(currMove == pos->searchKillers[1][pos->ply])
 				) reduce--;
 
 				// reduce more if we are not in the PV and/or not improving
 				reduce += !isPv + !improving;
+
+				// adjust based on history scores
+                reduce -= pos->searchHistory[pos->side][FROMSQ(currMove)][TOSQ(currMove)] / 6167;
 
 				// do not fall directly into quiescence search
 				reduce = CLAMP(reduce, 1, depth - 1);
@@ -392,6 +401,10 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 		TakeMove(pos);
 
+		if (nonCaptureProm) {
+			tried_quiets[quiets_tried++] = list->moves[MoveNum].move;
+		}
+
 		if(Score > BestScore) {
 			BestScore = Score;
 			BestMove = list->moves[MoveNum].move;
@@ -402,25 +415,23 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 					info->fhf++;
 				}
 				info->fh++;
+
+				// update killer move
 				if (nonCaptureProm) {
 					if ((pos->searchKillers[0][pos->ply] != list->moves[MoveNum].move)) {
 						pos->searchKillers[1][pos->ply] = pos->searchKillers[0][pos->ply];
 						pos->searchKillers[0][pos->ply] = list->moves[MoveNum].move;
 					}
+
 				}
+
+				// update hashtable
 				StoreHashEntry(pos, table, BestMove, beta, HFBETA, depth);
-				return beta;
+			
+				break;
 			}
 			FoundPv = TRUE;
 			alpha = Score;
-			if (nonCaptureProm) {
-				// possible new history formula
-				/*
-				int bonus = MIN(depth * depth, 128);
-				pos->searchHistory[pos->pieces[FROMSQ(BestMove)]][TOSQ(BestMove)] += bonus - pos->searchHistory[pos->pieces[FROMSQ(BestMove)]][TOSQ(BestMove)] * bonus / 4096;
-				*/
-				pos->searchHistory[pos->pieces[FROMSQ(BestMove)]][TOSQ(BestMove)] += depth;
-			}
 		}
     }
 
@@ -430,6 +441,21 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 
 	ASSERT(alpha>=OldAlpha);
 
+	// if we have a bestmove and it is quiet, we update history
+	if (BestMove && !(BestMove & MFLAGCAP) && !(BestMove & MFLAGPROM)) {
+		int bonus = depth > 13 ? 32 : 16 * depth * depth + 128 * MAX(depth - 1, 0); 
+		// for the rest of the quiets we give a negative history score
+		for (int i = 0; i < quiets_tried; i++) {
+			int quietMove = tried_quiets[i];
+			int sign = (quietMove == BestMove) ? 1 : -1;
+			pos->searchHistory[pos->side][FROMSQ(quietMove)][TOSQ(quietMove)] += (sign * bonus) - pos->searchHistory[pos->side][FROMSQ(quietMove)][TOSQ(quietMove)] * bonus / MAX_HISTORY;
+		}
+	}
+
+	// beta cutoff
+	if (Score > alpha && Score >= beta)
+		return beta;
+
 	// store in hash table
 	if(alpha != OldAlpha) {
 		StoreHashEntry(pos, table, BestMove, BestScore, HFEXACT, depth);
@@ -437,7 +463,7 @@ static int AlphaBeta(int alpha, int beta, int depth, S_BOARD *pos, S_SEARCHINFO 
 		StoreHashEntry(pos, table, BestMove, alpha, HFALPHA, depth);
 	}
 
-	return alpha;
+	return BestScore;
 }
 
 void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {

@@ -143,6 +143,7 @@ void Uci_Loop(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table) {
             ParsePosition(line, pos);
         } else if (!strncmp(line, "ucinewgame", 10)) {
 			ClearHashTable(table);
+			ClearHistory(pos);
             ParsePosition("position startpos\n", pos);
         } else if (!strncmp(line, "go", 2)) {
             printf("Seen Go..\n");

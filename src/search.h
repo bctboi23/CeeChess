@@ -7,6 +7,8 @@
 #define INFINITE 30000
 #define ISMATE (INFINITE - MAXDEPTH)
 
+#define MAX_HISTORY 16384
+
 enum { UCIMODE, CONSOLEMODE };
 
 typedef struct {
@@ -35,5 +37,6 @@ typedef struct {
 
 extern void SearchPosition(S_BOARD *pos, S_SEARCHINFO *info, S_HASHTABLE *table);
 extern void InitSearch();
+extern void ClearHistory();
 
 #endif
