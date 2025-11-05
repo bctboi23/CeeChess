@@ -2,11 +2,11 @@
 # old makefile was contributed to by servusDei2018 and hamzainaan
 
 CC = gcc
-CFLAGS = -O3 -s -Wall
+CFLAGS = -O3 -s -Wall -flto
 #CFLAGS = -O3 -g -pg -no-pie # use these compile flags if profiling with gprof
-CFLAGS = -O3 -s -Wall -fopenmp # use these compile flags if tuning eval and have ability to use OpenMP
+CFLAGS = -O3 -s -Wall -fopenmp -flto # use these compile flags if tuning eval and have ability to use OpenMP
 LDFLAGS = -lm
-VERSION = CeeChess-v2.1
+VERSION = CeeChess-v2.2
 
 # windows requires backslash
 ifeq ($(OS),Windows_NT)

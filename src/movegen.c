@@ -77,7 +77,7 @@ static int scoreQuiet(const S_BOARD *pos, int move) {
 	if (pos->searchKillers[1][pos->ply - 2] == move) {
 		return 600000;
 	}
-	return MIN(pos->searchHistory[pos->pieces[FROMSQ(move)]][TOSQ(move)], 500000);
+	return pos->searchHistory[pos->side][FROMSQ(move)][TOSQ(move)];
 }
 
 static int scoreCapture(const S_BOARD *pos, int move) {
@@ -89,7 +89,7 @@ static int scoreEnPassant(const S_BOARD *pos, int move) {
 }
 
 static int scoreQueenPromotion(const S_BOARD *pos, int move) {
-	return 950000; // this should score after captures but before killer moves
+	return 1000000 + 610 + VictimScore[CAPTURED(move)]; // this should score quiet queen promotions before captures
 }
 
 static void AddMove(const S_BOARD *pos, int move, S_MOVELIST *list, MoveOrderFunction moveOrder) {
@@ -305,6 +305,15 @@ void GenerateAllCaps(const S_BOARD *pos, S_MOVELIST *list) {
 			int sq = POP_LSB(&en_passant_bitboard);
 			AddMove(pos, MOVE(sq, pos->enPas, EMPTY, EMPTY, MFLAGEP), list, &scoreEnPassant); // since en passant promotion is impossible we skip checking for it
 		}
+	}
+
+	// include quiet promotions in capture generation (for QS)
+	int direction = 8 - (16 * side);
+	U64 promotion_mask = RankBBMask[PromotionRank[side]];
+	U64 promotion_bitboard = singlePawnPush(pos->piece_bbs[side_pawns - 1] & promotion_mask, pos->color_bbs[BOTH], side);
+	while (promotion_bitboard) {
+		int t_sq = POP_LSB(&promotion_bitboard);
+		HandlePromotion(pos, t_sq - direction, t_sq, EMPTY, EMPTY, list, &scoreQuiet);
 	}
 
 	U64 pawns = pos->piece_bbs[side_pawns - 1];
